@@ -477,7 +477,7 @@ pub async fn read_files_n_apply_diff_chunks(
     let chunks_undo_edit = chunks.iter().enumerate().filter(|(idx, c)|applied_state.get(*idx) == Some(&true) && c.file_action == "edit").collect::<Vec<_>>();
     let chunks_apply_edit = chunks.iter().enumerate().filter(|(idx, c)|desired_state.get(*idx) == Some(&true) && c.file_action == "edit").collect::<Vec<_>>();
 
-    let other_actions = vec!["add", "remove", "rename"];
+    let other_actions = ["add", "remove", "rename"];
     let chunks_undo_other = chunks.iter().enumerate().filter(|(idx, c)|applied_state.get(*idx) == Some(&true) && other_actions.contains(&c.file_action.as_str())).collect::<Vec<_>>();
     let chunks_apply_other = chunks.iter().enumerate().filter(|(idx, c)|desired_state.get(*idx) == Some(&true) && other_actions.contains(&c.file_action.as_str())).collect::<Vec<_>>();
 
@@ -542,7 +542,7 @@ pub fn unwrap_diff_apply_outputs(
     chunks_default: Vec<DiffChunk>
 ) -> Vec<ApplyDiffUnwrapped> {
     let mut out_results = vec![];
-    let other_actions = vec!["add", "remove", "rename"];
+    let other_actions = ["add", "remove", "rename"];
 
     for (chunk_id, c) in chunks_default.into_iter().enumerate() {
         if let Some(res) = outputs.get(&chunk_id) {

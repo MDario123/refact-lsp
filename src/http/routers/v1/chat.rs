@@ -25,7 +25,7 @@ pub fn available_tools_by_chat_mode(current_tools: Vec<Value>, chat_mode: &ChatM
             current_tools
         },
         ChatMode::CONFIGURE => {
-            let blacklist = vec!["tree", "locate", "knowledge", "search"];
+            let blacklist = ["tree", "locate", "knowledge", "search"];
             current_tools
                 .into_iter()
                 .filter(|x| {
@@ -38,7 +38,7 @@ pub fn available_tools_by_chat_mode(current_tools: Vec<Value>, chat_mode: &ChatM
                 .collect()
         },
         ChatMode::PROJECT_SUMMARY => {
-            let whitelist = vec!["cat", "tree", "bash"];
+            let whitelist = ["cat", "tree", "bash"];
             current_tools
                 .into_iter()
                 .filter(|x| {

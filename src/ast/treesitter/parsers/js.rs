@@ -649,7 +649,7 @@ impl JSParser {
                        .collect();
                 }
                 if let Some(first) = def.path_components.first() {
-                    if vec!["@", ".", ".."].contains(&first.as_str()) {
+                    if ["@", ".", ".."].contains(&first.as_str()) {
                         def.import_type = ImportType::UserModule;
                     } 
                 }

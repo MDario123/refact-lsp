@@ -496,7 +496,7 @@ pub fn parse_anything(
 pub fn filesystem_path_to_double_colon_path(cpath: &str) -> Vec<String> {
     let path = Path::new(cpath);
     let mut components = vec![];
-    let silly_names_list = vec!["__init__.py", "mod.rs"];
+    let silly_names_list = ["__init__.py", "mod.rs"];
     if let Some(file_name) = path.file_stem() {
         let file_name_str = file_name.to_string_lossy().to_string();
         if !silly_names_list.contains(&file_name_str.as_str()) {

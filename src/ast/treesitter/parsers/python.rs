@@ -353,8 +353,9 @@ impl PythonParser {
                                 }
                             }
                             if let Some(right) = right_mb {
-                                decl.type_.inference_info = Some(code.slice(right.byte_range()).to_string());
-                                decl.type_.is_pod = vec!["integer", "string", "float", "false", "true"]
+                                decl.type_.inference_info =
+                                    Some(code.slice(right.byte_range()).to_string());
+                                decl.type_.is_pod = ["integer", "string", "float", "false", "true"]
                                     .contains(&right.kind());
                             }
                             symbols.push(Arc::new(RwLock::new(Box::new(decl))));
@@ -513,9 +514,9 @@ impl PythonParser {
             "comment" | "string" => {
                 let mut is_block = false;
                 if let Some(parent_) = info.node.parent() {
-                    is_block |= vec!["module", "block"].contains(&parent_.kind());
+                    is_block |= ["module", "block"].contains(&parent_.kind());
                     if let Some(parent_) = parent_.parent() {
-                        is_block |= vec!["module", "block"].contains(&parent_.kind());
+                        is_block |= ["module", "block"].contains(&parent_.kind());
                     }
                 }
 

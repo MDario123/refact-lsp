@@ -376,7 +376,7 @@ async fn find_relevant_files(
     let mut futures = vec![];
 
     // ----- TREEGUESS ------
-    let strategy_tree_tools = vec!["tree", "cat"];
+    let strategy_tree_tools = ["tree", "cat"];
     let mut strategy_tree = strategy_messages.clone();
     strategy_tree.push(
         pretend_tool_call(
@@ -437,7 +437,7 @@ async fn find_relevant_files(
     }
 
     // ----- EXPAND/REDUCE ------
-    let expand_reduce_tools = vec!["cat", "definition", "references", "search"];
+    let expand_reduce_tools = ["cat", "definition", "references", "search"];
 
     let mut messages = vec![];
     messages.push(ChatMessage::new("system".to_string(), RF_EXPAND_REDUCE_SYSTEM_PROMPT.to_string()));

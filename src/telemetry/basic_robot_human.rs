@@ -66,11 +66,18 @@ fn basetext_to_text_leap_calculations(
         &removed_characters.lines().last().unwrap_or("").to_string(),
         &added_characters.lines().next().unwrap_or("").to_string(),
     );
-    let added_characters= vec![
+    let added_characters = [
         added_characters_first_line,
-        added_characters.lines().skip(1).map(|x|x.to_string()).collect::<Vec<String>>().join("\n")
-    ].join("\n");
-    let mut human_characters = re.replace_all(&added_characters, "").len() as i64 - rec.robot_characters_acc_baseline;
+        added_characters
+            .lines()
+            .skip(1)
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join("\n"),
+    ]
+    .join("\n");
+    let mut human_characters =
+        re.replace_all(&added_characters, "").len() as i64 - rec.robot_characters_acc_baseline;
     let now = chrono::Local::now().timestamp();
     let time_diff_s = (now - rec.baseline_updated_ts).max(1);
     if human_characters.max(1) / time_diff_s > MAX_CHARS_PER_SECOND {

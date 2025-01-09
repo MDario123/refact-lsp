@@ -102,7 +102,12 @@ impl AstBasedFileSplitter {
                 let mut is_flushed = false;
                 let mut parent_guid = &symbol.parent_guid;
                 while let Some(_parent_sym) = guid_to_info.get(parent_guid) {
-                    if vec![SymbolType::StructDeclaration, SymbolType::FunctionDeclaration].contains(&_parent_sym.symbol_type) {
+                    if [
+                        SymbolType::StructDeclaration,
+                        SymbolType::FunctionDeclaration,
+                    ]
+                    .contains(&_parent_sym.symbol_type)
+                    {
                         flush_accumulator(&mut unused_symbols_cluster_accumulator, &mut chunks);
                         is_flushed = true;
                         break;

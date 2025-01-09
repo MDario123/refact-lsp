@@ -204,7 +204,8 @@ impl CppParser {
         let mut symbols: Vec<AstSymbolInstanceArc> = vec![];
         let mut type_ = TypeDef::default();
         if let Some(type_node) = info.node.child_by_field_name("type") {
-            if vec!["class_specifier", "struct_specifier", "enum_specifier"].contains(&type_node.kind()) {
+            if ["class_specifier", "struct_specifier", "enum_specifier"].contains(&type_node.kind())
+            {
                 let usages = self.parse_struct_declaration(info, code, candidates);
                 type_.guid = Some(*usages.last().unwrap().read().guid());
                 type_.name = Some(usages.last().unwrap().read().name().to_string());
@@ -414,7 +415,10 @@ impl CppParser {
                         self.parse_declaration(&scope, code, path, parent_guid, is_error, candidates);
                     symbols.extend(symbols_l);
                     types.extend(types_l);
-                    namespace = vec![namespace, name_l, namespace_l].iter().filter(|x| !x.is_empty()).join("::");
+                    namespace = [namespace, name_l, namespace_l]
+                        .iter()
+                        .filter(|x| !x.is_empty())
+                        .join("::");
                 }
                 if let Some(name_node) = parent.child_by_field_name("name") {
                     symbols.extend(self.find_error_usages(&name_node, code, path, &parent_guid));
@@ -423,7 +427,10 @@ impl CppParser {
                     symbols.extend(symbols_l);
                     types.extend(types_l);
                     name = name_l;
-                    namespace = vec![namespace, namespace_l].iter().filter(|x| !x.is_empty()).join("::");
+                    namespace = [namespace, namespace_l]
+                        .iter()
+                        .filter(|x| !x.is_empty())
+                        .join("::");
                 }
             }
             "pointer_declarator" => {
