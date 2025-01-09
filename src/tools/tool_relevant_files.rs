@@ -518,7 +518,7 @@ async fn _reduced_files_to_reality(
 
     for (file_path, file_output) in reduced_files {
         let mut symbols = vec![];
-        if !vec!["", "*"].contains(&file_output.symbols.as_str()) {
+        if !["", "*"].contains(&file_output.symbols.as_str()) {
             symbols = file_output.symbols.split(",").map(|x| x.trim().to_string()).collect::<Vec<_>>()
         };
 

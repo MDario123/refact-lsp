@@ -52,7 +52,7 @@ fn validate_chunk(chunk: &DiffChunk) -> Result<(), String> {
     if chunk.line2 < chunk.line1 {
         return Err("Invalid line range: line2 cannot be < line1".to_string());
     }
-    if !vec!["edit", "add", "rename", "remove"].contains(&chunk.file_action.as_str()) {
+    if !["edit", "add", "rename", "remove"].contains(&chunk.file_action.as_str()) {
         return Err("Invalid file action: file_action must be one of `edit, add, rename, remove`".to_string());
     }
     if chunk.file_name_rename.is_some() && chunk.file_action != "rename" {
