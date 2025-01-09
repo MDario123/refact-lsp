@@ -39,6 +39,10 @@ struct MemQuery {
     top_n: usize,
 }
 
+fn internal_error(e: String) -> ScratchError {
+    ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, e)
+}
+
 pub async fn handle_mem_add(
     Extension(gcx): Extension<Arc<ARwLock<GlobalContext>>>,
     body_bytes: hyper::body::Bytes,
@@ -55,10 +59,10 @@ pub async fn handle_mem_add(
         &post.goal,
         &post.project,
         &post.payload,
-        &post.origin
-    ).await.map_err(|e| {
-        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e))
-    })?;
+        &post.origin,
+    )
+    .await
+    .map_err(internal_error)?;
 
     let response = Response::builder()
         .header("Content-Type", "application/json")
@@ -80,7 +84,7 @@ pub async fn handle_mem_erase(
     let vec_db = gcx.read().await.vec_db.clone();
     let erased_cnt = crate::vecdb::vdb_highlev::memories_erase(vec_db, &post.memid)
         .await
-        .map_err(|e| ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, e))?;
+        .map_err(internal_error)?;
 
     assert!(erased_cnt <= 1);
 
@@ -106,10 +110,10 @@ pub async fn handle_mem_update_used(
         vec_db,
         &post.memid,
         post.correct,
-        post.relevant
-    ).await.map_err(|e| {
-        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e))
-    })?;
+        post.relevant,
+    )
+    .await
+    .map_err(internal_error)?;
 
     assert!(updated_cnt <= 1);
 
@@ -128,7 +132,7 @@ pub async fn handle_mem_block_until_vectorized(
     let vec_db = gcx.read().await.vec_db.clone();
     crate::vecdb::vdb_highlev::memories_block_until_vectorized(vec_db, 20_000)
         .await
-        .map_err(|e| ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)))?;
+        .map_err(internal_error)?;
 
     let response = Response::builder()
         .header("Content-Type", "application/json")
@@ -147,13 +151,9 @@ pub async fn handle_mem_query(
         ScratchError::new(StatusCode::BAD_REQUEST, format!("JSON problem: {}", e))
     })?;
 
-    let memories = crate::vecdb::vdb_highlev::memories_search(
-        gcx.clone(),
-        &post.goal,
-        post.top_n,
-    ).await.map_err(|e| {
-        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{e}"))
-    })?;
+    let memories = crate::vecdb::vdb_highlev::memories_search(gcx.clone(), &post.goal, post.top_n)
+        .await
+        .map_err(internal_error)?;
 
     let response_body = serde_json::to_string_pretty(&memories).unwrap();
 
@@ -170,9 +170,9 @@ pub async fn handle_mem_list(
 ) -> Result<Response<Body>, ScratchError> {
     let vec_db = gcx.read().await.vec_db.clone();
 
-    let memories = crate::vecdb::vdb_highlev::memories_select_all(vec_db).await.map_err(|e| {
-        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e))
-    })?;
+    let memories = crate::vecdb::vdb_highlev::memories_select_all(vec_db)
+        .await
+        .map_err(internal_error)?;
 
     let response_body = serde_json::to_string_pretty(&memories).unwrap();
 
