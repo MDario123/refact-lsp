@@ -243,13 +243,12 @@ pub async fn generate_commit_message_by_diff(
     let commit_message = new_messages
         .into_iter()
         .next()
-        .map(|x| {
+        .and_then(|x| {
             x.into_iter().last().map(|last_m| match last_m.content {
                 ChatContent::SimpleText(text) => Some(text),
                 ChatContent::Multimodal(_) => None,
             })
         })
-        .flatten()
         .flatten()
         .ok_or("No commit message was generated".to_string())?;
     Ok(remove_fencing(&commit_message))

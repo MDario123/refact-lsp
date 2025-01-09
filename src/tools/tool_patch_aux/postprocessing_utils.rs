@@ -118,7 +118,8 @@ pub async fn postprocess_diff_chunks(
             return Err(format!("No apply results were found for the filename:\n{:?}", file_name));
         }
 
-        let text_after = if let Some(file_text) = results.first().map(|x| x.file_text.clone()).flatten() {
+        let text_after = if let Some(file_text) = results.first().and_then(|x| x.file_text.clone())
+        {
             file_text
         } else {
             // those chunks could miss the text_after, so we just skip them

@@ -69,9 +69,17 @@ pub async fn generate_follow_up_message(
         None,
         None,
         None,
-    ).await?;
-    let response = updated_messages.into_iter().next().map(|x| x.into_iter().last().map(|last_m| {
-        last_m.content.content_text_only() })).flatten().ok_or("No commit message found".to_string())?;
+    )
+    .await?;
+    let response = updated_messages
+        .into_iter()
+        .next()
+        .and_then(|x| {
+            x.into_iter()
+                .last()
+                .map(|last_m| last_m.content.content_text_only())
+        })
+        .ok_or("No commit message found".to_string())?;
 
     tracing::info!("follow-up model says1 {:?}", messages);
     tracing::info!("follow-up model says2 {:?}", response);
