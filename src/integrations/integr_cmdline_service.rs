@@ -203,11 +203,15 @@ async fn execute_background_command(
             accumulated_stdout.push_str(&stdout_out);
             accumulated_stderr.push_str(&stderr_out);
 
-            if !cfg.startup_wait_keyword.is_empty() {
-                if accumulated_stdout.contains(&cfg.startup_wait_keyword) || accumulated_stderr.contains(&cfg.startup_wait_keyword) {
-                    actions_log.push_str(&format!("Startup keyword '{}' found in output, success!\n\n", cfg.startup_wait_keyword));
-                    break;
-                }
+            if !cfg.startup_wait_keyword.is_empty()
+                && (accumulated_stdout.contains(&cfg.startup_wait_keyword)
+                    || accumulated_stderr.contains(&cfg.startup_wait_keyword))
+            {
+                actions_log.push_str(&format!(
+                    "Startup keyword '{}' found in output, success!\n\n",
+                    cfg.startup_wait_keyword
+                ));
+                break;
             }
 
             let exit_status = process.try_wait().map_err(|e| e.to_string())?;
