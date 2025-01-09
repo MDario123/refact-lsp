@@ -122,7 +122,7 @@ pub fn format_output(stdout_out: &str, stderr_out: &str) -> String {
             out.push_str(&format!("STDERR\n```\n{}```\n\n", stderr_out));
         }
         if stdout_out.is_empty() && stderr_out.is_empty() {
-            out.push_str(&format!("Nothing in STDOUT/STDERR\n\n"));
+            out.push_str("Nothing in STDOUT/STDERR\n\n");
         }
     }
     out

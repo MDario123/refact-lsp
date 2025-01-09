@@ -78,9 +78,9 @@ pub async fn handle_mem_erase(
     })?;
 
     let vec_db = gcx.read().await.vec_db.clone();
-    let erased_cnt = crate::vecdb::vdb_highlev::memories_erase(vec_db, &post.memid).await.map_err(|e| {
-        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e))
-    })?;
+    let erased_cnt = crate::vecdb::vdb_highlev::memories_erase(vec_db, &post.memid)
+        .await
+        .map_err(|e| ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
     assert!(erased_cnt <= 1);
 

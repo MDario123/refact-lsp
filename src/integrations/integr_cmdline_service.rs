@@ -143,7 +143,7 @@ async fn execute_background_command(
         let filtered_stderr = output_mini_postprocessing(&cfg.output_filter, &stderr_out);
         actions_log.push_str(&format!("Here are stdin/stderr since the last checking out on the service:\n{}\n\n", format_output(&filtered_stdout, &filtered_stderr)));
     } else {
-        actions_log.push_str(&format!("Service is currently not running\n"));
+        actions_log.push_str("Service is currently not running\n");
     }
 
     if session_mb.is_some() && (action == "restart" || action == "stop") {
@@ -151,7 +151,7 @@ async fn execute_background_command(
         {
             let mut session_locked = session_arc.lock().await;
             let session = session_locked.as_any_mut().downcast_mut::<CmdlineSession>().unwrap();
-            actions_log.push_str(&format!("Stopping it...\n"));
+            actions_log.push_str("Stopping it...\n");
             let stop_log = Box::into_pin(session.try_stop()).await;
             actions_log.push_str(&stop_log);
         }

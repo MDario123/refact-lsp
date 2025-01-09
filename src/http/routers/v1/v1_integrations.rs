@@ -120,13 +120,13 @@ pub async fn handle_v1_integration_save(
         .map_err(|e| ScratchError::new(StatusCode::UNPROCESSABLE_ENTITY, format!("JSON problem: {}", e)))?;
 
     crate::integrations::setting_up_integrations::integration_config_save(&post.integr_config_path, &post.integr_values).await.map_err(|e| {
-        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e))
+        ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
     Ok(Response::builder()
        .status(StatusCode::OK)
        .header("Content-Type", "application/json")
-       .body(Body::from(format!("")))
+       .body(Body::from(""))
        .unwrap())
 }
 

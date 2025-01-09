@@ -19,7 +19,7 @@ pub async fn generate_follow_up_message(
         // messages.push(last_assistant_msg);
         last_assistant_msg_text = last_assistant_msg.content.content_text_only();
     } else {
-        return Err(format!("The last message is not role=assistant"));
+        return Err("The last message is not role=assistant".to_string());
     }
 
     // If the robot message is an open question, return empty list.

@@ -28,12 +28,14 @@ pub async fn telemetry_wrapper(func: impl Fn(Extension<SharedGlobalContext>, hyp
         if !e.telemetry_skip {
             let tele_storage = &ex.read().await.telemetry;
             let mut tele_storage_locked = tele_storage.write().unwrap();
-            tele_storage_locked.tele_net.push(telemetry_structs::TelemetryNetwork::new(
-                path.path().to_string(),
-                format!("{}", method),
-                false,
-                format!("{}", e.message),
-            ));
+            tele_storage_locked
+                .tele_net
+                .push(telemetry_structs::TelemetryNetwork::new(
+                    path.path().to_string(),
+                    format!("{}", method),
+                    false,
+                    e.message.to_string(),
+                ));
         }
         error!("{} returning \"{}\"", path, e.status_code);
         return Ok(e.to_response());
