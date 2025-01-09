@@ -70,7 +70,7 @@ pub fn git_ls_files(repository_path: &PathBuf) -> Option<Vec<PathBuf>> {
     if !files.is_empty() { Some(files) } else { None }
 }
 
-/// Similar to git checkout -b <branch_name>
+// /// Similar to git checkout -b <branch_name>
 // pub fn create_or_checkout_to_branch<'repo>(repository: &'repo Repository, branch_name: &str) -> Result<Branch<'repo>, String> {
 //     let branch = match repository.find_branch(branch_name, git2::BranchType::Local) {
 //         Ok(branch) => branch,
