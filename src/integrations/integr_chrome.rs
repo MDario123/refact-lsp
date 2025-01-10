@@ -967,11 +967,19 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                if args.seconds < 1.0 && args.seconds > 5.0 {
-                    return Err(format!("wait_for at {} failed: `seconds` should be integer in interval [1, 5]", tab_lock.state_string()))
+                if !(1.0 <= args.seconds && args.seconds <= 5.0) {
+                    return Err(format!(
+                        "wait_for at {} failed: `seconds` should be integer in interval [1, 5]",
+                        tab_lock.state_string()
+                    ));
                 }
-                sleep(Duration::from_secs(3)).await;
-                format!("wait_for {} seconds at {} successful.", args.seconds, tab_lock.state_string())
+                let seconds = args.seconds as u64;
+                sleep(Duration::from_secs(seconds)).await;
+                format!(
+                    "wait_for {} seconds at {} successful.",
+                    seconds,
+                    tab_lock.state_string()
+                )
             };
             tool_log.push(log);
         },
