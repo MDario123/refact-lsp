@@ -369,6 +369,7 @@ pub async fn scratchpad_interaction_stream(
 
         let mut save_url: String = String::new();
         let _ = slowdown_arc.acquire().await;
+        #[allow(clippy::never_loop)]
         loop {
             let value_maybe = my_scratchpad.response_spontaneous();
             if let Ok(value) = value_maybe {
