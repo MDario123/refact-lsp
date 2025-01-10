@@ -4,6 +4,9 @@ strip = true
 opt-level = "z"
 lto = true
 
+[lints.clippy]
+upper_case_acronyms = "allow"
+
 [package]
 name = "refact-lsp"
 version = "0.10.8"
