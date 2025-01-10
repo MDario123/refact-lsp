@@ -76,17 +76,17 @@ pub async fn execute_at_search(
     let api_key = api_key.unwrap();
 
     let vec_db = gcx.read().await.vec_db.clone();
-    let r = match *vec_db.lock().await {
+    let vec_db = vec_db.lock().await;
+    match *vec_db {
         Some(ref db) => {
             let top_n_twice_as_big = top_n * 2;  // top_n will be cut at postprocessing stage, and we really care about top_n files, not pieces
             // TODO: this code sucks, release lock, don't hold anything during the search
             let search_result = db.vecdb_search(query.clone(), top_n_twice_as_big, vecdb_scope_filter_mb, &api_key).await?;
-            let results = search_result.results.clone();
-            return Ok(results2message(&results));
+            let results = search_result.results;
+            Ok(results2message(&results))
         }
         None => Err("VecDB is not active. Possible reasons: VecDB is turned off in settings, or perhaps a vectorization model is not available.".to_string())
-    };
-    r
+    }
 }
 
 #[async_trait]
