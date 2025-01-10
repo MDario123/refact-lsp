@@ -354,36 +354,30 @@ async fn recall_dirty_memories_and_mark_them_not_dirty(
     let rows: Vec<(String, String)> = {
         let conn = memdb_locked.conn.lock();
         if memdb_locked.dirty_everything {
-            let mut stmt = conn.prepare("SELECT memid, m_goal FROM memories")
-                .map_err(|e| format!("Failed to prepare statement: {}", e))?;
-            let x = stmt.query_map([], |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                ))
-            })
+            conn.prepare("SELECT memid, m_goal FROM memories")
+                .map_err(|e| format!("Failed to prepare statement: {}", e))?
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
                 .map_err(|e| format!("Failed to query memories: {}", e))?
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| format!("Failed to collect rows: {}", e))?;
-            x
+                .collect::<Result<_, _>>()
+                .map_err(|e| format!("Failed to collect rows: {}", e))?
         } else if !memdb_locked.dirty_memids.is_empty() {
             let placeholders = (0..memdb_locked.dirty_memids.len())
                 .map(|_| "?")
                 .collect::<Vec<_>>()
                 .join(",");
-            let query = format!("SELECT memid, m_goal FROM memories WHERE memid IN ({})", placeholders);
-            let mut stmt = conn.prepare(&query)
-                .map_err(|e| format!("Failed to prepare statement: {}", e))?;
-            let x = stmt.query_map(rusqlite::params_from_iter(memdb_locked.dirty_memids.iter()), |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                ))
-            })
+            let query = format!(
+                "SELECT memid, m_goal FROM memories WHERE memid IN ({})",
+                placeholders
+            );
+            conn.prepare(&query)
+                .map_err(|e| format!("Failed to prepare statement: {}", e))?
+                .query_map(
+                    rusqlite::params_from_iter(memdb_locked.dirty_memids.iter()),
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
                 .map_err(|e| format!("Failed to query memories: {}", e))?
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(|e| format!("Failed to collect rows: {}", e))?;
-            x
+                .collect::<Result<_, _>>()
+                .map_err(|e| format!("Failed to collect rows: {}", e))?
         } else {
             Vec::new()
         }
