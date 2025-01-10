@@ -17,9 +17,14 @@ pub struct CommitInfo {
 }
 impl CommitInfo {
     pub fn get_project_name(&self) -> String {
-        self.project_path.to_file_path().ok()
-            .and_then(|path| path.file_name().map(|name| name.to_string_lossy().into_owned()))
-            .unwrap_or_else(|| "".to_string())
+        self.project_path
+            .to_file_path()
+            .ok()
+            .and_then(|path| {
+                path.file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+            })
+            .unwrap_or_default()
     }
 }
 
