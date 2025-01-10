@@ -324,7 +324,7 @@ pub fn apply_diff_chunks_to_text(
     let chunks_apply_edit = chunks_apply.iter().filter(|(_, c)|c.file_action == "edit").cloned().collect::<Vec<_>>();
     let chunks_undo_edit = chunks_undo.iter().filter(|(_, c)|c.file_action == "edit").cloned().collect::<Vec<_>>();
 
-    let other_actions = vec!["add", "remove", "rename"];
+    let other_actions = ["add", "remove", "rename"];
     let chunks_apply_other = chunks_apply.iter().filter(|(_, c)|other_actions.contains(&c.file_action.as_str())).cloned().collect::<Vec<_>>();
     let chunks_undo_other = chunks_undo.iter().filter(|(_, c)|other_actions.contains(&c.file_action.as_str())).cloned().collect::<Vec<_>>();
 
