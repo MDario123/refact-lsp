@@ -6,6 +6,7 @@ lto = true
 
 [lints.clippy]
 upper_case_acronyms = "allow"
+absurd_extreme_comparisons = "warn"
 
 [package]
 name = "refact-lsp"
