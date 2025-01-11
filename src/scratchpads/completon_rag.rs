@@ -28,7 +28,7 @@ async fn _render_context_files(
         return "".to_string();
     }
     let (repo_name, cursor_filepath_stripped) =
-        if let Some(project_dir) = crate::files_correction::get_project_dirs(gcx).await.get(0) {
+        if let Some(project_dir) = crate::files_correction::get_project_dirs(gcx).await.first() {
             let repo_name = project_dir
                 .file_name()
                 .map(|x| x.to_string_lossy().to_string())
@@ -82,7 +82,7 @@ async fn _cursor_position_to_context_file(
     cursor_line: i32,
     context_used: &mut Value,
 ) -> Vec<ContextFile> {
-    if cursor_line < 0 || cursor_line > 65535 {
+    if !(0..=65535).contains(&cursor_line) {
         tracing::error!("cursor line {} out of range", cursor_line);
         return vec![];
     }
@@ -237,7 +237,7 @@ pub async fn retrieve_ast_based_extra_context(
         gcx.clone(),
         &t.context_format,
         &postprocessed_messages,
-        &cpath,
+        cpath,
     )
     .await
 }

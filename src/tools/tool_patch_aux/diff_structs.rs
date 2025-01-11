@@ -95,7 +95,6 @@ pub fn diff_blocks_to_diff_chunks(diff_blocks: &Vec<DiffBlock>) -> Vec<DiffChunk
                 line1: useful_block_lines
                     .iter()
                     .map(|x| x.file_line_num_idx
-                        .clone()
                         .expect("All file_line_num_idx must be filled to this moment in the `normalize_diff_block` func") + 1)
                     .min()
                     .unwrap_or(1),
@@ -103,11 +102,10 @@ pub fn diff_blocks_to_diff_chunks(diff_blocks: &Vec<DiffBlock>) -> Vec<DiffChunk
                     .iter()
                     .map(|x| {
                         if x.line_type == LineType::Plus {
-                            x.file_line_num_idx.clone()
+                            x.file_line_num_idx
                                 .expect("All file_line_num_idx must be filled to this moment in the `normalize_diff_block` func") + 1
                         } else {
                             x.file_line_num_idx
-                                .clone()
                                 .expect("All file_line_num_idx must be filled to this moment in the `normalize_diff_block` func") + 2
                         }
                     })

@@ -24,7 +24,7 @@ pub struct SshTunnel {
 
 impl SshTunnel {
     pub fn get_first_published_port(&self) -> Result<String, String> {
-        self.forwarded_ports.iter().next()
+        self.forwarded_ports.first()
           .map(|port| port.published.clone())
           .ok_or_else(|| "Internal error: No forwarded ports found.".to_string())
     }
@@ -88,7 +88,7 @@ pub async fn ssh_tunnel_open(ports_to_forward: &mut Vec<Port>, ssh_config: &SshC
         command.arg("-i").arg(identity_file);
     }
     command.arg("-p").arg(ssh_config.port.to_string());
-    command.arg(&format!("{}@{}", ssh_config.user, ssh_config.host));
+    command.arg(format!("{}@{}", ssh_config.user, ssh_config.host));
     command.stdout(Stdio::piped());
     command.stderr(Stdio::piped());
 
@@ -139,5 +139,5 @@ pub async fn ssh_tunnel_open(ports_to_forward: &mut Vec<Port>, ssh_config: &SshC
         }
     }
 
-    return Err(format!("Failed to connect to 127.0.0.1:{}, max attempts reached", &port_to_test_connection.published));
+    Err(format!("Failed to connect to 127.0.0.1:{}, max attempts reached", &port_to_test_connection.published))
 }

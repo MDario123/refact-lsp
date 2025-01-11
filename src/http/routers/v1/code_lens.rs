@@ -122,10 +122,10 @@ pub async fn handle_v1_code_lens(
             });
             for u in def.usages.iter() {
                 let resolved = u.resolved_as.rsplit("::").take(2).collect::<Vec<&str>>().iter().rev().cloned().collect::<Vec<&str>>().join("::");
-                let txt = if resolved != "" {
+                let txt = if !resolved.is_empty() {
                     format!("↗{}", resolved)
                 } else {
-                    format!("❌{}", u.targets_for_guesswork.get(0).unwrap_or(&"".to_string()))
+                    format!("❌{}", u.targets_for_guesswork.first().unwrap_or(&"".to_string()))
                 };
                 output.push(CodeLensOutput {
                     spath: "".to_string(),

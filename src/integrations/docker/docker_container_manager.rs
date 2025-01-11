@@ -81,14 +81,14 @@ pub async fn docker_container_check_status_or_start(
     let isolation = isolation_maybe.ok_or_else(|| "No isolation tool available".to_string())?;
     let docker_container_session_maybe = {
         let gcx_locked = gcx.read().await;
-        gcx_locked.integration_sessions.get(&get_session_hashmap_key("docker", &chat_id)).cloned()
+        gcx_locked.integration_sessions.get(&get_session_hashmap_key("docker", chat_id)).cloned()
     };
 
     match docker_container_session_maybe {
         Some(docker_container_session) => {
             let mut docker_container_session_locked = docker_container_session.lock().await;
             let docker_container_session = docker_container_session_locked.as_any_mut().downcast_mut::<DockerContainerSession>()
-                .ok_or_else(|| "Failed to downcast docker container session")?;
+                .ok_or("Failed to downcast docker container session")?;
 
             match &mut docker_container_session.connection {
                 DockerContainerConnectionEnum::SshTunnel(ssh_tunnel) => {
@@ -121,7 +121,7 @@ pub async fn docker_container_check_status_or_start(
             };
             ports_to_forward.insert(0, Port {published: "0".to_string(), target: LSP_PORT.to_string()});
 
-            let container_id = docker_container_create(&docker, &isolation, &chat_id, &ports_to_forward, LSP_PORT, gcx.clone()).await?;
+            let container_id = docker_container_create(&docker, &isolation, chat_id, &ports_to_forward, LSP_PORT, gcx.clone()).await?;
             docker_container_sync_config_folder(&docker, &container_id, gcx.clone()).await?;
             docker_container_start(gcx.clone(), &docker, &container_id).await?;
             let exposed_ports = docker_container_get_exposed_ports(&docker, &container_id, &ports_to_forward, gcx.clone()).await?;
@@ -166,7 +166,7 @@ pub async fn docker_container_check_status_or_start(
 
             let mut gcx_locked = gcx.write().await;
             gcx_locked.integration_sessions.insert(
-                get_session_hashmap_key("docker", &chat_id), session
+                get_session_hashmap_key("docker", chat_id), session
             );
             Ok(())
         }
@@ -180,26 +180,26 @@ pub async fn docker_container_get_host_lsp_port_to_connect(
 {
     let docker_container_session_maybe = {
         let gcx_locked = gcx.read().await;
-        gcx_locked.integration_sessions.get(&get_session_hashmap_key("docker", &chat_id)).cloned()
+        gcx_locked.integration_sessions.get(&get_session_hashmap_key("docker", chat_id)).cloned()
     };
 
     match docker_container_session_maybe {
         Some(docker_container_session) => {
             let mut docker_container_session_locked = docker_container_session.lock().await;
             let docker_container_session = docker_container_session_locked.as_any_mut().downcast_mut::<DockerContainerSession>()
-              .ok_or_else(|| "Failed to downcast docker container session")?;
+              .ok_or("Failed to downcast docker container session")?;
 
-            return match &docker_container_session.connection {
+            match &docker_container_session.connection {
                 DockerContainerConnectionEnum::SshTunnel(ssh_tunnel) => {
                     ssh_tunnel.get_first_published_port()
                 },
                 DockerContainerConnectionEnum::LocalPort(internal_port) => {
                     Ok(internal_port.to_string())
                 },
-            };
+            }
         },
         None => {
-            return Err("Docker container session not found, cannot get host port".to_string());
+            Err("Docker container session not found, cannot get host port".to_string())
         }
     }
 }
@@ -269,7 +269,7 @@ async fn docker_container_sync_config_folder(
         (gcx_locked.config_dir.clone(), gcx_locked.cmdline.integrations_yaml.clone(), gcx_locked.cmdline.variables_yaml.clone())
     };
     let config_dir_string = config_dir.to_string_lossy().to_string();
-    let container_home_dir = docker_container_get_home_dir(&docker, &container_id, gcx.clone()).await?;
+    let container_home_dir = docker_container_get_home_dir(docker, container_id, gcx.clone()).await?;
 
     // Creating intermediate folders one by one, as docker cp does not support --parents
     let temp_dir = tempfile::Builder::new().tempdir()
@@ -295,7 +295,7 @@ async fn docker_container_get_home_dir(
     container_id: &str,
     gcx: Arc<ARwLock<GlobalContext>>,
 ) -> Result<String, String> {
-    let inspect_config_command = "container inspect --format '{{json .Config}}' ".to_string() + &container_id;
+    let inspect_config_command = "container inspect --format '{{json .Config}}' ".to_string() + container_id;
     let (inspect_config_output, _) = docker.command_execute(&inspect_config_command, gcx.clone(), true, true).await?;
 
     let config_json: serde_json::Value = serde_json::from_str(&inspect_config_output)
@@ -315,11 +315,11 @@ async fn docker_container_start(
     docker: &ToolDocker,
     container_id: &str,
 ) -> Result<(), String> {
-    let start_command = "container start ".to_string() + &container_id;
+    let start_command = "container start ".to_string() + container_id;
     docker.command_execute(&start_command, gcx.clone(), true, true).await?;
 
     // If docker container is not running, print last lines of logs.
-    let inspect_command = "container inspect --format '{{json .State.Running}}' ".to_string() + &container_id;
+    let inspect_command = "container inspect --format '{{json .State.Running}}' ".to_string() + container_id;
     let (inspect_output, _) = docker.command_execute(&inspect_command, gcx.clone(), true, true).await?;
     if inspect_output.trim() != "true" {
         let (logs_output, _) = docker.command_execute(&format!("container logs --tail 10 {container_id}"), gcx.clone(), true, true).await?;
@@ -407,7 +407,7 @@ async fn append_folder_if_exists(
     if folder_path.exists() {
         for entry in WalkDir::new(&folder_path) {
             let entry = entry.map_err(|e| format!("Error walking directory: {}", e))?;
-            let relative_path = entry.path().strip_prefix(&workspace_folder)
+            let relative_path = entry.path().strip_prefix(workspace_folder)
               .map_err(|e| format!("Error stripping prefix: {}", e))?;
             tar_builder.append_path_with_name(entry.path(), relative_path).await
               .map_err(|e| format!("Error adding file to tar archive: {}", e))?;
@@ -426,7 +426,7 @@ async fn docker_container_get_exposed_ports(
     ports_to_forward: &Vec<Port>,
     gcx: Arc<ARwLock<GlobalContext>>,
 ) -> Result<Vec<Port>, String> {
-    let inspect_command = "inspect --format '{{json .NetworkSettings.Ports}}' ".to_string() + &container_id;
+    let inspect_command = "inspect --format '{{json .NetworkSettings.Ports}}' ".to_string() + container_id;
     let (inspect_output, _) = docker.command_execute(&inspect_command, gcx.clone(), true, true).await?;
     tracing::info!("{}:\n{}", inspect_command, inspect_output);
 

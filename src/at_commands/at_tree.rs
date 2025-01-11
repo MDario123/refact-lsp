@@ -161,7 +161,7 @@ fn _print_files_tree(
 
     let mut result = String::new();
     for node in tree {
-        if let Some(output) = traverse(&node, 0, maxdepth, ast_db.clone()) {
+        if let Some(output) = traverse(node, 0, maxdepth, ast_db.clone()) {
             result.push_str(&output);
         } else {
             break;
@@ -183,7 +183,7 @@ fn _print_files_tree_with_budget(
         }
         good_enough = bigger_tree_str;
     }
-    return good_enough;
+    good_enough
 }
 
 pub async fn print_files_tree_with_budget(
@@ -239,11 +239,10 @@ impl AtCommand for AtTree {
             Some(arg) => {
                 let path = arg.text.clone();
                 let candidates = correct_to_nearest_dir_path(gcx.clone(), &path, false, 10).await;
-                let candidate = return_one_candidate_or_a_good_error(gcx.clone(), &path, &candidates, &project_dirs, true).await.map_err(|e| {
+                let candidate = return_one_candidate_or_a_good_error(gcx.clone(), &path, &candidates, &project_dirs, true).await.inspect_err(|e| {
                     cmd.ok = false;
                     cmd.reason = Some(e.clone());
                     args.clear();
-                    e
                 })?;
                 let start_dir = PathBuf::from(candidate);
                 let paths_start_with_start_dir = filtered_paths.iter()

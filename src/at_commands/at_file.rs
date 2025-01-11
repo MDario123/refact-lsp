@@ -97,7 +97,7 @@ fn gradient_type_from_range_kind(range: &Option<ColonLinesRange>) -> i32 {
 
 fn put_colon_back_to_arg(value: &mut String, colon: &Option<ColonLinesRange>) {
     if let Some(colon) = colon {
-        value.push_str(":");
+        value.push(':');
         value.push_str(range_print(colon).as_str());
     }
 }
@@ -139,7 +139,7 @@ pub async fn return_one_candidate_or_a_good_error(
             correct_to_nearest_dir_path(gcx.clone(), file_path, true, 10).await.join("\n")
         } else {
             let name_only = f_path.file_name().ok_or(format!("unable to get file name from path: {:?}", f_path))?.to_string_lossy().to_string();
-            let x = file_repair_candidates(gcx.clone(), &name_only, 10, true).await.iter().cloned().take(10).collect::<Vec<_>>();
+            let x = file_repair_candidates(gcx.clone(), &name_only, 10, true).await.iter().take(10).cloned().collect::<Vec<_>>();
             let shortified_file_names = shortify_paths(gcx.clone(), &x).await;
             shortified_file_names.join("\n")
         };
@@ -177,7 +177,7 @@ pub async fn return_one_candidate_or_a_good_error(
         return Err(format!("The path {:?} is ambiguous. It could be interpreted as:\n{}", file_path, candidates.join("\n")));
     }
 
-    let candidate = candidates.get(0).unwrap_or(&"".to_string()).clone();
+    let candidate = candidates.first().unwrap_or(&"".to_string()).clone();
     if !PathBuf::from(&candidate).exists() {
         return Err(format!("The path {:?} was not found on disk.", candidate));
     }
@@ -280,7 +280,7 @@ impl AtCommand for AtFile {
         cmd: &mut AtCommandMember,
         args: &mut Vec<AtCommandMember>,
     ) -> Result<(Vec<ContextEnum>, String), String> {
-        let mut arg0 = match args.iter().filter(|x|!x.text.trim().is_empty()).next() {
+        let mut arg0 = match args.iter().find(|x|!x.text.trim().is_empty()) {
             Some(x) => x.clone(),
             None => {
                 cmd.ok = false; cmd.reason = Some("no file provided".to_string());
@@ -317,7 +317,7 @@ impl AtCommand for AtFile {
             }
         };
 
-        if candidates.len() == 0 {
+        if candidates.is_empty() {
             return Err(format!("cannot find {:?}", arg0.text));
         }
 

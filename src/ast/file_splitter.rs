@@ -43,7 +43,7 @@ impl AstBasedFileSplitter {
             Ok(parser) => parser,
             Err(_e) => {
                 // tracing::info!("cannot find a parser for {:?}, using simple file splitter: {}", crate::nicer_logs::last_n_chars(&path.display().to_string(), 30), e.message);
-                return self.fallback_file_splitter.vectorization_split(&doc, tokenizer.clone(), tokens_limit, gcx.clone()).await;
+                return self.fallback_file_splitter.vectorization_split(doc, tokenizer.clone(), tokens_limit, gcx.clone()).await;
             }
         };
 
@@ -51,25 +51,25 @@ impl AstBasedFileSplitter {
         let mut symbols_struct: Vec<SymbolInformation> = Default::default();
         {
             let symbols = parser.parse(doc.text_as_string().unwrap().as_str(), &path);
-            let _ = symbols.into_iter().for_each(|s| {
+            symbols.into_iter().for_each(|s| {
                 let s = s.read();
-                guid_to_children.insert(s.guid().clone(), s.childs_guid().clone());
+                guid_to_children.insert(*s.guid(), s.childs_guid().clone());
                 symbols_struct.push(s.symbol_info_struct());
             });
         }
 
-        let ast_markup: FileASTMarkup = match crate::ast::lowlevel_file_markup(&doc, &symbols_struct) {
+        let ast_markup: FileASTMarkup = match crate::ast::lowlevel_file_markup(doc, &symbols_struct) {
             Ok(x) => x,
             Err(e) => {
                 tracing::info!("lowlevel_file_markup failed for {:?}, using simple file splitter: {}", crate::nicer_logs::last_n_chars(&path.display().to_string(), 30), e);
-                return self.fallback_file_splitter.vectorization_split(&doc, tokenizer.clone(), tokens_limit, gcx.clone()).await;
+                return self.fallback_file_splitter.vectorization_split(doc, tokenizer.clone(), tokens_limit, gcx.clone()).await;
             }
         };
 
-        let guid_to_info: HashMap<Uuid, &SymbolInformation> = ast_markup.symbols_sorted_by_path_len.iter().map(|s| (s.guid.clone(), s)).collect();
+        let guid_to_info: HashMap<Uuid, &SymbolInformation> = ast_markup.symbols_sorted_by_path_len.iter().map(|s| (s.guid, s)).collect();
         let guids: Vec<_> = guid_to_info.iter()
             .sorted_by(|a, b| a.1.full_range.start_byte.cmp(&b.1.full_range.start_byte))
-            .map(|(s, _)| s.clone()).collect();
+            .map(|(s, _)| *s).collect();
 
         let mut chunks: Vec<crate::vecdb::vdb_structs::SplitResult> = Vec::new();
         let mut unused_symbols_cluster_accumulator: Vec<&SymbolInformation> = Default::default();
@@ -92,7 +92,7 @@ impl AstBasedFileSplitter {
 
 
         for guid in &guids {
-            let symbol = guid_to_info.get(&guid).unwrap();
+            let symbol = guid_to_info.get(guid).unwrap();
             let need_in_vecdb_at_all = match symbol.symbol_type {
                 SymbolType::StructDeclaration | SymbolType::FunctionDeclaration |
                 SymbolType::TypeAlias | SymbolType::ClassFieldDeclaration => true,
@@ -125,7 +125,7 @@ impl AstBasedFileSplitter {
             if symbol.symbol_type == SymbolType::StructDeclaration {
                 if let Some(children) = guid_to_children.get(&symbol.guid) {
                     if !children.is_empty() {
-                        let skeleton_line = formatter.make_skeleton(&symbol, &doc_text, &guid_to_children, &guid_to_info);
+                        let skeleton_line = formatter.make_skeleton(symbol, &doc_text, &guid_to_children, &guid_to_info);
                         let chunks_ = crate::ast::chunk_utils::get_chunks(&skeleton_line, &symbol.file_path,
                                                  &symbol.symbol_path,
                                                  (symbol.full_range.start_point.row, symbol.full_range.end_point.row),
@@ -135,7 +135,7 @@ impl AstBasedFileSplitter {
                 }
             }
 
-            let (declaration, top_bottom_rows) = formatter.get_declaration_with_comments(&symbol, &doc_text, &guid_to_children, &guid_to_info);
+            let (declaration, top_bottom_rows) = formatter.get_declaration_with_comments(symbol, &doc_text, &guid_to_children, &guid_to_info);
             if !declaration.is_empty() {
                 let chunks_ = crate::ast::chunk_utils::get_chunks(&declaration, &symbol.file_path,
                                          &symbol.symbol_path, top_bottom_rows, tokenizer.clone(), tokens_limit, LINES_OVERLAP, true);

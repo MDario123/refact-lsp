@@ -46,19 +46,19 @@ pub async fn create_code_completion_scratchpad(
     let tokenizer_arc: Arc<StdRwLock<Tokenizer>> = cached_tokenizers::cached_tokenizer(caps, global_context.clone(), model_name_for_tokenizer).await?;
     if scratchpad_name == "FIM-PSM" {
         result = Box::new(code_completion_fim::FillInTheMiddleScratchpad::new(
-            tokenizer_arc, &post, "PSM".to_string(), cache_arc, tele_storage, ast_module, global_context.clone()
+            tokenizer_arc, post, "PSM".to_string(), cache_arc, tele_storage, ast_module, global_context.clone()
         ))
     } else if scratchpad_name == "FIM-SPM" {
         result = Box::new(code_completion_fim::FillInTheMiddleScratchpad::new(
-            tokenizer_arc, &post, "SPM".to_string(), cache_arc, tele_storage, ast_module, global_context.clone()
+            tokenizer_arc, post, "SPM".to_string(), cache_arc, tele_storage, ast_module, global_context.clone()
         ))
     } else if scratchpad_name == "REPLACE" {
         result = Box::new(code_completion_replace::CodeCompletionReplaceScratchpad::new(
-            tokenizer_arc, &post, cache_arc, tele_storage, ast_module, global_context.clone()
+            tokenizer_arc, post, cache_arc, tele_storage, ast_module, global_context.clone()
         ))
     } else if scratchpad_name == "REPLACE_PASSTHROUGH" {
         result = Box::new(code_completion_replace::CodeCompletionReplacePassthroughScratchpad::new(
-            tokenizer_arc, &post, cache_arc, tele_storage, ast_module, global_context.clone()
+            tokenizer_arc, post, cache_arc, tele_storage, ast_module, global_context.clone()
         ))
     } else {
         return Err(format!("This rust binary doesn't have code completion scratchpad \"{}\" compiled in", scratchpad_name));

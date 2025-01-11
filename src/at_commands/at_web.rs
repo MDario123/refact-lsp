@@ -37,7 +37,7 @@ impl AtCommand for AtWeb {
         cmd: &mut AtCommandMember,
         args: &mut Vec<AtCommandMember>,
     ) -> Result<(Vec<ContextEnum>, String), String> {
-        let url = match args.get(0) {
+        let url = match args.first() {
             Some(x) => x.clone(),
             None => {
                 cmd.ok = false; cmd.reason = Some("missing URL".to_string());
@@ -207,7 +207,7 @@ pub async fn execute_at_web(url: &str) -> Result<String, String>{
     let html = find_content(html);
 
     let text = html2text::config::with_decorator(CustomTextConversion)
-        .string_from_read(&html.as_bytes()[..], 200)
+        .string_from_read(html.as_bytes(), 200)
         .map_err(|_| "Unable to convert html to text".to_string())?;
 
     Ok(text)

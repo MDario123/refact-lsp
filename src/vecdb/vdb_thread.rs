@@ -52,7 +52,7 @@ async fn vectorize_batch_from_q(
     B: usize,
 ) -> Result<(), String> {
     let batch = run_actual_model_on_these.drain(..B.min(run_actual_model_on_these.len())).collect::<Vec<_>>();
-    assert!(batch.len() > 0);
+    assert!(!batch.is_empty());
 
     let batch_result = match get_embedding_with_retry(
         client.clone(),
@@ -106,12 +106,9 @@ async fn vectorize_batch_from_q(
         );
     }
 
-    if send_to_cache.len() > 0 {
-        match vecdb_cache_arc.lock().await.cache_add_new_records(send_to_cache).await {
-            Err(e) => {
-                warn!("Error adding records to the cacheDB: {}", e);
-            }
-            _ => {}
+    if !send_to_cache.is_empty() {
+        if let Err(e) = vecdb_cache_arc.lock().await.cache_add_new_records(send_to_cache).await {
+            warn!("Error adding records to the cacheDB: {}", e);
         }
     }
 
@@ -241,7 +238,7 @@ async fn vectorize_thread(
         let flush = ready_to_vecdb.len() > 100 || files_unprocessed == 0 || work_on_one.is_none();
         loop {
             if
-            run_actual_model_on_these.len() > 0 && flush ||
+            !run_actual_model_on_these.is_empty() && flush ||
                 run_actual_model_on_these.len() >= constants.embedding_batch
             {
                 if let Err(err) = vectorize_batch_from_q(
@@ -263,7 +260,7 @@ async fn vectorize_thread(
         }
 
         if flush {
-            assert!(run_actual_model_on_these.len() == 0);
+            assert!(run_actual_model_on_these.is_empty());
             // This function assumes it can delete records with the filenames mentioned, therefore assert above
             _send_to_vecdb(vecdb_handler_arc.clone(), &mut ready_to_vecdb).await;
         }
@@ -317,7 +314,7 @@ async fn vectorize_thread(
                         //     Ok(_) => info!("VECDB CREATED INDEX"),
                         //     Err(err) => info!("VECDB Error creating index: {}", err)
                         // }
-                        let _ = write!(std::io::stderr(), "VECDB COMPLETE\n");
+                        let _ = writeln!(std::io::stderr(), "VECDB COMPLETE");
                         info!("VECDB COMPLETE"); // you can see stderr "VECDB COMPLETE" sometimes faster vs logs
                         vstatus_notify.notify_waiters();
                         {
@@ -403,7 +400,7 @@ async fn _send_to_vecdb(
         let unique_file_paths_vec: Vec<String> = unique_file_paths.into_iter().collect();
         vecdb_handler_arc.lock().await.vecdb_records_remove(unique_file_paths_vec).await;
 
-        let batch: Vec<VecdbRecord> = ready_to_vecdb.drain(..).collect();
+        let batch: Vec<VecdbRecord> = std::mem::take(ready_to_vecdb);
         if !batch.is_empty() {
             vecdb_handler_arc.lock().await.vecdb_records_add(&batch).await;
         }

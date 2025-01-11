@@ -4,8 +4,6 @@ use std::panic;
 
 use tokio::task::JoinHandle;
 use tracing::{info, Level};
-use tracing_appender;
-use backtrace;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -101,7 +99,7 @@ async fn main() {
         Level::ERROR,
         cmdline.lsp_stdin_stdout == 0
     );
-    let _tracing = tracing_subscriber::registry()
+    tracing_subscriber::registry()
         .with(my_layer)
         .init();
 

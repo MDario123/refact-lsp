@@ -115,7 +115,7 @@ impl VecDBHandler {
                 .build()
             {
                 Ok(res) => Ok(res),
-                Err(err) => return Err(format!("{:?}", err))
+                Err(err) => Err(format!("{:?}", err))
             }
         }
 
@@ -123,7 +123,7 @@ impl VecDBHandler {
             return;
         }
 
-        let vectors: ArrayData = match make_emb_data(&records, self.embedding_size) {
+        let vectors: ArrayData = match make_emb_data(records, self.embedding_size) {
             Ok(res) => res,
             Err(err) => {
                 tracing::error!("{:?}", err);
@@ -222,7 +222,7 @@ impl VecDBHandler {
                 .map(|x| x.unwrap()).collect();
             let distance = match embedding_to_compare {
                 None => { -1.0 }
-                Some(embedding) => { cosine_distance(&embedding, &gathered_vec) }
+                Some(embedding) => { cosine_distance(embedding, &gathered_vec) }
             };
             let embedding = match include_embedding {
                 true => Some(gathered_vec),
@@ -267,7 +267,7 @@ impl VecDBHandler {
             .try_collect::<Vec<_>>()
             .await?;
         let record_batch = concat_batches(&self.schema, &query)?;
-        match VecDBHandler::parse_table_iter(record_batch, false, Some(&embedding)) {
+        match VecDBHandler::parse_table_iter(record_batch, false, Some(embedding)) {
             Ok(records) => {
                 let filtered: Vec<VecdbRecord> = records
                     .into_iter()

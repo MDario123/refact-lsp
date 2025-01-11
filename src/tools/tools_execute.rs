@@ -88,7 +88,7 @@ pub async fn run_tools_remotely(
         model_name: model_name.to_string(),
         chat_id: chat_id.clone(),
         style: style.clone(),
-        tools_confirmation: tools_confirmation.clone(),
+        tools_confirmation,
     };
 
     let port = docker_container_get_host_lsp_port_to_connect(gcx.clone(), &chat_id).await?;
@@ -408,7 +408,7 @@ pub fn command_should_be_confirmed_by_user(
 ) -> (bool, String) {
     if let Some(rule) = commands_need_confirmation_rules.iter().find(|glob| {
         let pattern = Pattern::new(glob).unwrap();
-        pattern.matches(&command)
+        pattern.matches(command)
     }) {
         return (true, rule.clone());
     }
@@ -421,7 +421,7 @@ pub fn command_should_be_denied(
 ) -> (bool, String) {
     if let Some(rule) = commands_deny_rules.iter().find(|glob| {
         let pattern = Pattern::new(glob).unwrap();
-        pattern.matches(&command)
+        pattern.matches(command)
     }) {
         return (true, rule.clone());
     }

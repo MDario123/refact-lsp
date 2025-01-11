@@ -101,13 +101,13 @@ pub async fn handle_v1_docker_container_list(
         Err(e) => return Ok(docker_container_list_response(vec![], false, &e)),
     };
 
-    let mut output: Vec<Value> = unparsed_output.lines().map(|line| serde_json::from_str(line)).collect::<Result<Vec<_>, _>>()
+    let mut output: Vec<Value> = unparsed_output.lines().map(serde_json::from_str).collect::<Result<Vec<_>, _>>()
         .map_err(|e| ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("Container list JSON problem: {}", e)))?;
     
     if let Some(image) = post.image {
-        output = output.into_iter().filter(|container| {
+        output.retain(|container| {
             container["Image"].as_str().map_or(false, |image_name| image_name.contains(&image))
-        }).collect();
+        });
     }
 
     let container_ids = output.iter().map(|container| {
@@ -115,7 +115,7 @@ pub async fn handle_v1_docker_container_list(
             .ok_or_else(|| ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("Missing container ID in output:\n{:?}", output)))
     }).collect::<Result<Vec<String>, ScratchError>>()?;
 
-    if container_ids.len() == 0 {
+    if container_ids.is_empty() {
         return Ok(docker_container_list_response(vec![], true, ""));
     }
 
@@ -166,7 +166,7 @@ fn docker_container_list_response(
            .body(Body::from(serde_json::to_string(&response).unwrap())).unwrap()
 }
 
-fn extract_string_field<'a>(container: &'a serde_json::Value, field_path: &[&str], error_message: &str) -> Result<String, ScratchError> {
+fn extract_string_field(container: &serde_json::Value, field_path: &[&str], error_message: &str) -> Result<String, ScratchError> {
     field_path.iter().fold(container, |acc, &key| &acc[key]).as_str().map(ToString::to_string)
         .ok_or_else(|| ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, format!("{}:\n{:?}", error_message, container)))
 }

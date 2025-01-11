@@ -250,7 +250,7 @@ pub async fn try_load_caps_quickly_if_not_present(
                 Err(e) => {
                     error!("caps fetch failed: {:?}", e);
                     gcx_locked.caps_last_error = format!("caps fetch failed: {}", e);
-                    return Err(ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, gcx_locked.caps_last_error.clone()));
+                    Err(ScratchError::new(StatusCode::INTERNAL_SERVER_ERROR, gcx_locked.caps_last_error.clone()))
                 }
             }
         }

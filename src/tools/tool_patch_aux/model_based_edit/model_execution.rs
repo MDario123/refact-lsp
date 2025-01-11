@@ -44,7 +44,7 @@ async fn make_chat_history(
 
     let max_tokens = max_tokens.saturating_sub(max_new_tokens);
 
-    let ticket0 = tickets.get(0).expect("no tickets provided");
+    let ticket0 = tickets.first().expect("no tickets provided");
     let context_file = read_file(gcx.clone(), ticket0.filename_before.clone()).await
         .map_err(|e| format!("Cannot read file to modify: {}.\nERROR: {}", ticket0.filename_before, e))?;
 
@@ -178,8 +178,7 @@ pub async fn execute_blocks_of_code_patch(
     usage: &mut ChatUsage,
 ) -> Result<Vec<Vec<DiffChunk>>, (String, Option<String>)> {
     let filename = PathBuf::from(
-        tickets
-            .get(0)
+        tickets.first()
             .expect("no tickets provided")
             .filename_before
             .clone()
@@ -223,8 +222,7 @@ pub async fn execute_blocks_of_code_patch(
     if chunks.is_empty() || chunks.iter().any(|x| x.is_ok()) {
         return Ok(chunks
             .iter()
-            .map(|x| x.clone().ok())
-            .filter_map(|x| x)
+            .filter_map(|x| x.clone().ok())
             .collect());
     }
 
@@ -274,8 +272,7 @@ pub async fn execute_blocks_of_code_patch(
     if chunks.is_empty() || chunks.iter().any(|x| x.is_ok()) {
         Ok(chunks
             .iter()
-            .map(|x| x.clone().ok())
-            .filter_map(|x| x)
+            .filter_map(|x| x.clone().ok())
             .collect())
     } else {
         Err((
@@ -295,8 +292,7 @@ pub async fn execute_whole_file_patch(
     usage: &mut ChatUsage,
 ) -> Result<Vec<Vec<DiffChunk>>, (String, Option<String>)> {
     let filename = PathBuf::from(
-        tickets
-            .get(0)
+        tickets.first()
             .expect("no tickets provided")
             .filename_before
             .clone()
@@ -339,8 +335,7 @@ pub async fn execute_whole_file_patch(
     if chunks.iter().any(|x| x.is_ok()) {
         Ok(chunks
             .iter()
-            .map(|x| x.clone().ok())
-            .filter_map(|x| x)
+            .filter_map(|x| x.clone().ok())
             .collect())
     } else {
         Err((

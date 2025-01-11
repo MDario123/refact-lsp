@@ -47,7 +47,7 @@ pub async fn handle_v1_integrations_filtered(
                         let (start, end) = integration.integr_config_path.split_at(pos);
                         integration_copy.integr_config_path = format!("{}{}{}", start, integr_name, &end[integration.integr_name.len()..]);
                     }
-                    if integration.integr_name.find("_TEMPLATE").is_some() {
+                    if integration.integr_name.contains("_TEMPLATE") {
                         let config_path_exists = integrations_result.integrations.iter().any(|existing_integration| {
                             existing_integration.integr_config_path == integration_copy.integr_config_path
                         });

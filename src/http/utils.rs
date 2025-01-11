@@ -43,7 +43,7 @@ pub async fn telemetry_wrapper(func: impl Fn(Extension<SharedGlobalContext>, hyp
     if !spam {
         info!("{} completed {}ms", path, t0.elapsed().as_millis());
     }
-    return Ok(result.unwrap());
+    Ok(result.unwrap())
 }
 
 #[macro_export]

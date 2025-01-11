@@ -105,7 +105,7 @@ pub async fn handle_v1_ast_file_symbols(
         1,
     ).await;
 
-    if corrected.len() == 0 {
+    if corrected.is_empty() {
         return Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .body(Body::from(serde_json::to_string_pretty(&json!({"detail": "File not found"})).unwrap()))

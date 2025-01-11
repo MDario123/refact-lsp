@@ -122,7 +122,7 @@ async fn sections_to_diff_blocks(
     let mut diff_blocks = vec![];
     let file_lines = read_file(gcx.clone(), filename.to_string_lossy().to_string())
         .await
-        .map(|x| x.file_content.lines().into_iter()
+        .map(|x| x.file_content.lines()
             .map(|x| {
                 if let Some(stripped_row) = x.to_string()
                     .replace("\r\n", "\n")
@@ -137,7 +137,7 @@ async fn sections_to_diff_blocks(
     let mut errors: Vec<String> = vec![];
     for (idx, sections) in sections.iter().chunks(2).into_iter()
         .map(|x| x.collect::<Vec<_>>()).enumerate() {
-        let orig_section = sections.get(0).ok_or("No original section found")?;
+        let orig_section = sections.first().ok_or("No original section found")?;
         let modified_section = sections.get(1).ok_or("No modified section found")?;
         if orig_section.type_ != SectionType::Original || modified_section.type_ != SectionType::Modified {
             return Err("section types are messed up, try to regenerate the diff".to_string());
@@ -193,7 +193,7 @@ async fn sections_to_diff_blocks(
                     err += "Split it into multiple sections like this:\n";
                     for (_, _, found_block) in res {
                         err += &format!("### Original Section (to be replaced)\n```\n{}\n```\n", found_block.join("\n"));
-                        err += &"### Modified Section (to replace with)\n```\n[Modified code section]\n```\n".to_string();
+                        err += "### Modified Section (to replace with)\n```\n[Modified code section]\n```\n";
                     }
                     errors.push(err.clone());
                     error!("{}", err);
@@ -219,7 +219,8 @@ pub struct BlocksOfCodeParser {}
 
 impl BlocksOfCodeParser {
     pub fn prompt() -> String {
-        let prompt = r#"You will receive an original file, modified sections within that file and extra hint messages. 
+        
+        r#"You will receive an original file, modified sections within that file and extra hint messages. 
 Your task is to identify and extract all original sections that correspond to the provided modified sections and output them in the desired format. 
 Carefully read the hints if they're given, they contain important information about the changes (i.e. exact spots where to paste those sections).
 Follow the steps below to ensure accuracy and clarity in your response.
@@ -251,8 +252,7 @@ Follow the steps below to ensure accuracy and clarity in your response.
 ### Modified Section (to replace with)
 ```
 [an old section + new section]
-```"#.to_string();
-        prompt
+```"#.to_string()
     }
 
     pub fn followup_prompt(error_message: &String) -> String {
@@ -286,7 +286,7 @@ If there are multiple functions in one section, create individual sections for e
             warn!("no sections found, probably an empty diff");
             return Ok(vec![]);
         }
-        let diff_blocks = sections_to_diff_blocks(gcx, &sections, &filename).await?;
+        let diff_blocks = sections_to_diff_blocks(gcx, &sections, filename).await?;
         let chunks = diff_blocks_to_diff_chunks(&diff_blocks)
             .into_iter()
             .unique()

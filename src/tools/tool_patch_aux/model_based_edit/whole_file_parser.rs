@@ -53,7 +53,8 @@ pub struct WholeFileParser {}
 
 impl WholeFileParser {
     pub fn prompt() -> String {
-        let prompt = r#"You will receive an original file, modified sections within that file and extra hint messages.
+        
+        r#"You will receive an original file, modified sections within that file and extra hint messages.
 Your task is to integrate each of these modified sections into the original file, applying every specified change exactly as provided, even if they seem minor or contain errors.
 Output the whole modified file!
 Before modifying the file, list each required change.
@@ -62,8 +63,7 @@ Output Format:
 # Modified file
 ```
 [code]
-```"#.to_string();
-        prompt
+```"#.to_string()
     }
 
     pub async fn parse_message(
@@ -73,7 +73,7 @@ Output Format:
     ) -> Result<Vec<DiffChunk>, String> {
         let modified_code = get_edit_sections(content);
         if let Some(code) = modified_code {
-            modified_code_to_diff_blocks(gcx.clone(), &code, &filename).await
+            modified_code_to_diff_blocks(gcx.clone(), &code, filename).await
         } else {
             error!("no code block found");
             Err("no code block found".to_string())

@@ -45,7 +45,7 @@ pub trait Tool: Send + Sync {
         _ccx: Arc<AMutex<AtCommandsContext>>,
         args: &HashMap<String, Value>
     ) -> Result<MatchConfirmDeny, String> {
-        let command_to_match = self.command_to_match_against_confirm_deny(&args).map_err(|e| {
+        let command_to_match = self.command_to_match_against_confirm_deny(args).map_err(|e| {
             format!("Error getting tool command to match: {}", e)
         })?;
 
@@ -93,7 +93,7 @@ pub trait Tool: Send + Sync {
     }
 
     fn has_config_path(&self) -> Option<String> {
-        return None;
+        None
     }
 
     fn tool_depends_on(&self) -> Vec<String> { vec![] }   // "ast", "vecdb"

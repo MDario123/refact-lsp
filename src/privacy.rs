@@ -56,13 +56,13 @@ async fn read_privacy_yaml(path: &Path) -> PrivacySettings
                 }
                 Err(e) => {
                     error!("parsing {} failed\n{}", path.display(), e);
-                    return PrivacySettings::default();
+                    PrivacySettings::default()
                 }
             }
         }
         Err(e) => {
             error!("unable to read content from {}\n{}", path.display(), e);
-            return PrivacySettings::default();
+            PrivacySettings::default()
         }
     }
 }
@@ -92,8 +92,8 @@ pub async fn load_privacy_if_needed(gcx: Arc<ARwLock<GlobalContext>>) -> Arc<Pri
 fn any_glob_matches_path(globs: &Vec<String>, path: &Path) -> bool {
     globs.iter().any(|glob| {
         let pattern = Pattern::new(glob).unwrap();
-        let matches = pattern.matches_path(path);
-        matches
+        
+        pattern.matches_path(path)
     })
 }
 fn get_file_privacy_level(privacy_settings: Arc<PrivacySettings>, path: &Path) -> FilePrivacyLevel

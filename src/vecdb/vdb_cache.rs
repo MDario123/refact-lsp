@@ -51,7 +51,7 @@ async fn check_and_recreate_embeddings_table(db: &Connection) -> tokio_rusqlite:
             schema.push(column?);
         }
         if schema != expected_schema {
-            if schema.len() > 0 {
+            if !schema.is_empty() {
                 info!("vector cache database has invalid schema, recreating the database");
             }
             conn.execute(&format!("DROP TABLE IF EXISTS {EMB_TABLE_NAME}"), [])?;

@@ -61,7 +61,7 @@ impl Tool for ToolAstDefinition {
 
             let (messages, tool_message) = if !defs.is_empty() {
                 const DEFS_LIMIT: usize = 20;
-                let mut tool_message = format!("Definitions found:\n").to_string();
+                let mut tool_message = "Definitions found:\n".to_string().to_string();
                 let messages = defs.iter().zip(short_file_paths.iter()).take(DEFS_LIMIT).map(|(res, short_path)| {
                     tool_message.push_str(&format!(
                         "{} defined at {}:{}-{}\n",
@@ -116,7 +116,9 @@ pub async fn there_are_definitions_with_similar_names_though(
     let fuzzy_matches: Vec<String> = crate::ast::ast_db::definition_paths_fuzzy(ast_index.clone(), symbol, 20, 5000)
         .await;
 
-    let tool_message = if fuzzy_matches.is_empty() {
+    
+
+    if fuzzy_matches.is_empty() {
         let counters = fetch_counters(ast_index).await;
         format!("No definitions with name `{}` found in the workspace, and no similar names were found among {} definitions in the AST tree.\n", symbol, counters.counter_defs)
     } else {
@@ -128,7 +130,5 @@ pub async fn there_are_definitions_with_similar_names_though(
             msg.push_str(&format!("{}\n", line));
         }
         msg
-    };
-
-    tool_message
+    }
 }

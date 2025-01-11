@@ -23,7 +23,7 @@ pub async fn forward_to_openai_style_endpoint(
 ) -> Result<serde_json::Value, String> {
     let is_passthrough = prompt.starts_with("PASSTHROUGH ");
     let url = if !is_passthrough { endpoint_template.replace("$MODEL", model_name) } else { endpoint_chat_passthrough.clone() };
-    save_url.clone_from(&&url);
+    save_url.clone_from(&url);
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_str("application/json").unwrap());
     if !bearer.is_empty() {
@@ -93,7 +93,7 @@ pub async fn forward_to_openai_style_endpoint_streaming(
 ) -> Result<EventSource, String> {
     let is_passthrough = prompt.starts_with("PASSTHROUGH ");
     let url = if !is_passthrough { endpoint_template.replace("$MODEL", model_name) } else { endpoint_chat_passthrough.clone() };
-    save_url.clone_from(&&url);
+    save_url.clone_from(&url);
     let mut headers = HeaderMap::new();
     headers.insert(CONTENT_TYPE, HeaderValue::from_str("application/json").unwrap());
     if !bearer.is_empty() {
@@ -132,7 +132,7 @@ fn passthrough_messages_to_json(
 ) {
     assert!(prompt.starts_with("PASSTHROUGH "));
     let messages_str = &prompt[12..];
-    let big_json: serde_json::Value = serde_json::from_str(&messages_str).unwrap();
+    let big_json: serde_json::Value = serde_json::from_str(messages_str).unwrap();
 
     data["messages"] = big_json["messages"].clone();
     if let Some(tools) = big_json.get("tools") {
@@ -165,10 +165,10 @@ pub async fn get_embedding_openai_style(
     api_key: &String,
 ) -> Result<Vec<Vec<f32>>, String> {
     if endpoint_template.is_empty() {
-        return Err(format!("no embedding_endpoint configured"));
+        return Err("no embedding_endpoint configured".to_string());
     }
     if api_key.is_empty() {
-        return Err(format!("cannot access embedding model, because api_key is empty"));
+        return Err("cannot access embedding model, because api_key is empty".to_string());
     }
     #[allow(non_snake_case)]
     let B = text.len();

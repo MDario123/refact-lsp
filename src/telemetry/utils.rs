@@ -14,9 +14,9 @@ use crate::global_context;
 
 pub async fn telemetry_storage_dirs(cache_dir: &PathBuf) -> (PathBuf, PathBuf) {
     let dir = cache_dir.join("telemetry").join("compressed");
-    tokio::fs::create_dir_all(dir.clone()).await.unwrap_or_else(|_| {});
+    tokio::fs::create_dir_all(dir.clone()).await.unwrap_or(());
     let dir2 = cache_dir.join("telemetry").join("sent");
-    tokio::fs::create_dir_all(dir2.clone()).await.unwrap_or_else(|_| {});
+    tokio::fs::create_dir_all(dir2.clone()).await.unwrap_or(());
     (dir, dir2)
 }
 
@@ -49,7 +49,7 @@ pub async fn compress_tele_records_to_file(
         "teletype": teletype,
         "enduser_client_version": enduser_client_version,
     });
-    return match file_save(file_name.clone(), big_json_rh).await {
+    match file_save(file_name.clone(), big_json_rh).await {
         Ok(_) => {
             info!("{} telemetry save \"{}\"", teletype, file_name.to_str().unwrap());
             Ok(())
@@ -58,7 +58,7 @@ pub async fn compress_tele_records_to_file(
             error!("error saving {} telemetry: {}", teletype,  e);
             Err(e)
         },
-    };
+    }
 }
 
 pub fn get_add_del_from_texts(
@@ -182,7 +182,7 @@ pub async fn sorted_json_files(dir: PathBuf) -> Vec<PathBuf> {
             }
             sorted.push(path);
         }
-        sorted.sort_by(|a, b| b.cmp(&a));
+        sorted.sort_by(|a, b| b.cmp(a));
         sorted
     } else {
         Vec::<PathBuf>::new()
@@ -237,7 +237,7 @@ pub fn if_head_tail_equal_return_added_text(
                 if adding_one_block {
                     added_one_block = true;
                 }
-                let whitespace_only = regex_space_only.is_match(&c.value());
+                let whitespace_only = regex_space_only.is_match(c.value());
                 if !whitespace_only {
                     if deletion_once.is_empty() {
                         deletion_once = c.value().to_string();
@@ -256,7 +256,7 @@ pub fn if_head_tail_equal_return_added_text(
             ChangeTag::Insert => {
                 // info!("+ {}", c.value());
                 let val = c.value();
-                let whitespace_only = regex_space_only.is_match(&c.value());
+                let whitespace_only = regex_space_only.is_match(c.value());
 
                 if !allow_add_spaces_once {
                     // error!("!allow_add_spaces_once");

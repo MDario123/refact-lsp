@@ -1,4 +1,3 @@
-use serde_json;
 use std::sync::Arc;
 use std::sync::RwLock;
 use tokio::sync::Mutex as AMutex;
@@ -136,7 +135,7 @@ impl HasTokenizerAndEot {
     ) -> Result<i32, String> {
         let tokenizer = self.tokenizer.write().unwrap();
         let tokens = tokenizer.encode(text, false).map_err(|err| {
-            return format!("Encoding error: {}", err);
+            format!("Encoding error: {}", err)
         })?;
         Ok(tokens.len() as i32)
     }

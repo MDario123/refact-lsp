@@ -65,7 +65,7 @@ impl ScratchpadAbstract for ChatLlama2 {
         self.keyword_slash_s = patch.get("slash_s").and_then(|x| x.as_str()).unwrap_or("</s>").to_string();
         self.t.eot = self.keyword_s.clone();
         info!("llama2 chat model adaptation patch applied {:?}", self.keyword_s);
-        self.t.assert_one_token(&self.t.eot.as_str())?;
+        self.t.assert_one_token(self.t.eot.as_str())?;
         self.dd.stop_list.clear();
         self.dd.stop_list.push(self.t.eot.clone());
         self.dd.stop_list.push(self.keyword_slash_s.clone());
@@ -121,9 +121,9 @@ impl ScratchpadAbstract for ChatLlama2 {
 
             if msg.role == "assistant" {
                 prompt.push_str(msg_content.trim());
-                prompt.push_str(" ");
-                prompt.push_str(&self.keyword_slash_s.as_str());
-                prompt.push_str(&self.keyword_s.as_str());
+                prompt.push(' ');
+                prompt.push_str(self.keyword_slash_s.as_str());
+                prompt.push_str(self.keyword_s.as_str());
                 prompt.push_str("[INST]");
             }
         }

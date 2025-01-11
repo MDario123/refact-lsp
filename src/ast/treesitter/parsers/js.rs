@@ -23,7 +23,7 @@ static LAMBDA_KINDS: [&str; 2] = ["function_expression", "arrow_function"];
 fn parse_type_from_value(parent: &Node, code: &str) -> Option<TypeDef> {
     let kind = parent.kind();
     let text = code.slice(parent.byte_range()).to_string();
-    return match kind {
+    match kind {
         "number" | "null" | "string" | "true" | "false" | "undefined" => {
             Some(TypeDef {
                 name: None,
@@ -161,7 +161,7 @@ impl JSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &info.ast_fields.file_path, &decl.ast_fields.guid));
@@ -191,7 +191,7 @@ impl JSParser {
         }
         let mut body_mb = info.node.child_by_field_name("body");
         // type_alias_declaration
-        if let None = body_mb {
+        if body_mb.is_none() {
             body_mb = info.node.child_by_field_name("value");
         }
 
@@ -200,7 +200,7 @@ impl JSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             })
         } else if info.node.kind() == "object" {
             for i in 0..info.node.child_count() {
@@ -208,7 +208,7 @@ impl JSParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: decl.ast_fields.clone(),
                     node: child,
-                    parent_guid: decl.ast_fields.guid.clone(),
+                    parent_guid: decl.ast_fields.guid,
                 })
             }
         }
@@ -240,7 +240,7 @@ impl JSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         if let Some(name) = info.node.child_by_field_name("name") {
@@ -257,7 +257,7 @@ impl JSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: info.ast_fields.clone(),
                 node: value,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
 
@@ -272,7 +272,7 @@ impl JSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         if let Some(name) = info.node.child_by_field_name("property") {
@@ -290,7 +290,7 @@ impl JSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: info.ast_fields.clone(),
                 node: value,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             })
         }
         symbols.push(Arc::new(RwLock::new(Box::new(decl))));
@@ -311,7 +311,7 @@ impl JSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &decl.ast_fields.file_path, &decl.ast_fields.guid));
@@ -352,7 +352,7 @@ impl JSParser {
                             candidates.push_back(CandidateInfo {
                                 ast_fields: info.ast_fields.clone(),
                                 node: right,
-                                parent_guid: info.ast_fields.guid.clone(),
+                                parent_guid: info.ast_fields.guid,
                             })
                         }
                     }
@@ -360,7 +360,7 @@ impl JSParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: info.ast_fields.clone(),
                             node: child,
-                            parent_guid: info.ast_fields.guid.clone(),
+                            parent_guid: info.ast_fields.guid,
                         });
                     }
                 }
@@ -378,7 +378,7 @@ impl JSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body_node,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             });
         }
         symbols.push(Arc::new(RwLock::new(Box::new(decl))));
@@ -395,9 +395,9 @@ impl JSParser {
         let mut decl = FunctionCall::default();
         decl.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
         decl.ast_fields.full_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
-        if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+        if let Some(caller_guid) = info.ast_fields.caller_guid {
             decl.ast_fields.guid = caller_guid;
         }
         decl.ast_fields.caller_guid = Some(get_guid());
@@ -418,7 +418,7 @@ impl JSParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: decl.ast_fields.clone(),
                             node: object,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         });
                     }
                 }
@@ -426,7 +426,7 @@ impl JSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: decl.ast_fields.clone(),
                         node: function,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -441,7 +441,7 @@ impl JSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: decl.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -453,7 +453,7 @@ impl JSParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: info.ast_fields.clone(),
                     node: child,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
             }
         }
@@ -482,7 +482,7 @@ impl JSParser {
                 usage.ast_fields.is_error = true;
                 usage.ast_fields.name = code.slice(parent.byte_range()).to_string();
                 usage.ast_fields.full_range = parent.range();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.guid = get_guid();
                 // if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
                 //     usage.ast_fields.guid = caller_guid;
@@ -502,7 +502,7 @@ impl JSParser {
                 // if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
                 //     usage.ast_fields.guid = caller_guid;
                 // }
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.caller_guid = Some(get_guid());
                 if let Some(object) = parent.child_by_field_name("object") {
                     symbols.extend(self.find_error_usages(&object, code, path, parent_guid));
@@ -539,7 +539,7 @@ impl JSParser {
                         let new_info = CandidateInfo {
                             ast_fields: info.ast_fields.clone(),
                             node: value,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         };
                         if LAMBDA_KINDS.contains(&kind) {
                             symbols.extend(self.parse_function_declaration(&new_info, code, candidates, Some(name)));
@@ -571,7 +571,7 @@ impl JSParser {
                             let new_info = CandidateInfo {
                                 ast_fields: info.ast_fields.clone(),
                                 node: value,
-                                parent_guid: info.parent_guid.clone(),
+                                parent_guid: info.parent_guid,
                             };
                             symbols.extend(self.parse_function_declaration(&new_info, code, candidates, Some(name)));
                         } else {
@@ -583,7 +583,7 @@ impl JSParser {
                             candidates.push_back(CandidateInfo {
                                 ast_fields: info.ast_fields.clone(),
                                 node: child,
-                                parent_guid: info.parent_guid.clone(),
+                                parent_guid: info.parent_guid,
                             })
                         }
                     }
@@ -593,7 +593,7 @@ impl JSParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: info.ast_fields.clone(),
                             node: child,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         })
                     }
                 }
@@ -606,9 +606,9 @@ impl JSParser {
                 usage.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
                 usage.ast_fields.name = code.slice(info.node.byte_range()).to_string();
                 usage.ast_fields.full_range = info.node.range();
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -621,16 +621,16 @@ impl JSParser {
                 }
                 usage.ast_fields.full_range = info.node.range();
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.caller_guid = Some(get_guid());
                 if let Some(object) = info.node.child_by_field_name("object") {
                     candidates.push_back(CandidateInfo {
                         ast_fields: usage.ast_fields.clone(),
                         node: object,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -638,7 +638,7 @@ impl JSParser {
             "import_statement" => {
                 let mut def = ImportDeclaration::default();
                 def.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 def.ast_fields.full_range = info.node.range();
                 if let Some(source) = info.node.child_by_field_name("source") {
@@ -702,7 +702,7 @@ impl JSParser {
                         }
                     }
                 }
-                if imports.len() > 0 {
+                if !imports.is_empty() {
                     imports.iter().for_each(|x| { symbols.push(Arc::new(RwLock::new(Box::new(x.clone())))) });
                 } else {
                     symbols.push(Arc::new(RwLock::new(Box::new(def))));
@@ -712,7 +712,7 @@ impl JSParser {
                 let mut def = CommentDefinition::default();
                 def.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
                 def.ast_fields.full_range = info.node.range();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
             }
@@ -725,7 +725,7 @@ impl JSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: ast.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -735,7 +735,7 @@ impl JSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -752,7 +752,7 @@ impl JSParser {
 
         let mut candidates = VecDeque::from(vec![CandidateInfo {
             ast_fields,
-            node: parent.clone(),
+            node: *parent,
             parent_guid: get_guid(),
         }]);
         while let Some(candidate) = candidates.pop_front() {
@@ -761,9 +761,9 @@ impl JSParser {
         }
 
         let guid_to_symbol_map = symbols.iter()
-            .map(|s| (s.clone().read().guid().clone(), s.clone())).collect::<HashMap<_, _>>();
+            .map(|s| (*s.clone().read().guid(), s.clone())).collect::<HashMap<_, _>>();
         for symbol in symbols.iter_mut() {
-            let guid = symbol.read().guid().clone();
+            let guid = *symbol.read().guid();
             if let Some(parent_guid) = symbol.read().parent_guid() {
                 if let Some(parent) = guid_to_symbol_map.get(parent_guid) {
                     parent.write().fields_mut().childs_guid.push(guid);
@@ -779,7 +779,7 @@ impl JSParser {
                 sym.fields_mut().childs_guid = sym.fields_mut().childs_guid.iter()
                     .sorted_by_key(|x| {
                         guid_to_symbol_map.get(*x).unwrap().read().full_range().start_byte
-                    }).map(|x| x.clone()).collect();
+                    }).copied().collect();
             }
         }
 

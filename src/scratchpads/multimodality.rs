@@ -14,7 +14,7 @@ pub struct MultimodalElement {
 
 impl MultimodalElement {
     pub fn new(m_type: String, m_content: String) -> Result<Self, String> {
-        if !(m_type == "text") && !m_type.starts_with("image/") {
+        if m_type != "text" && !m_type.starts_with("image/") {
             return Err(format!("MultimodalElement::new() received invalid type: {}", m_type));
         }
         if m_type.starts_with("image/") {
@@ -79,9 +79,9 @@ impl MultimodalElement {
     pub fn count_tokens(&self, tokenizer: Option<&RwLockReadGuard<Tokenizer>>, style: &Option<String>) -> Result<i32, String> {
         if self.is_text() {
             if let Some(tokenizer) = tokenizer {
-                Ok(count_tokens_simple_text(&tokenizer, &self.m_content) as i32)
+                Ok(count_tokens_simple_text(tokenizer, &self.m_content) as i32)
             } else {
-                return Err("count_tokens() received no tokenizer".to_string());
+                Err("count_tokens() received no tokenizer".to_string())
             }
         } else if self.is_image() {
             let style = style.clone().unwrap_or("openai".to_string());
@@ -278,9 +278,9 @@ impl<'de> Deserialize<'de> for ChatMessage {
         let content = match value.get("content") {
             Some(content_value) => {
                 let content_raw: ChatContentRaw = chat_content_raw_from_value(content_value.clone())
-                    .map_err(|e| serde::de::Error::custom(e))?;
+                    .map_err(serde::de::Error::custom)?;
                 content_raw.to_internal_format()
-                    .map_err(|e| serde::de::Error::custom(e))?
+                    .map_err(serde::de::Error::custom)?
             },
             None => ChatContent::SimpleText(String::new()),
         };

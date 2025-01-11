@@ -31,7 +31,7 @@ fn internal_error<E: Display>(err: E) -> ParserError {
     let err_msg = err.to_string();
     error!(err_msg);
     ParserError {
-        message: err_msg.into(),
+        message: err_msg,
     }
 }
 

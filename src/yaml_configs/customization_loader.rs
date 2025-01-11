@@ -255,10 +255,10 @@ mod tests {
             );
         }
         assert!(error_log.is_empty(), "There were errors in the error_log");
-        assert_eq!(config.system_prompts.get("default").is_some(), true);
-        assert_eq!(config.system_prompts.get("exploration_tools").is_some(), true);
-        assert_eq!(config.system_prompts.get("agentic_tools").is_some(), true);
-        assert_eq!(config.system_prompts.get("configurator").is_some(), true);
-        assert_eq!(config.system_prompts.get("project_summary").is_some(), true);
+        assert!(config.system_prompts.get("default").is_some());
+        assert!(config.system_prompts.get("exploration_tools").is_some());
+        assert!(config.system_prompts.get("agentic_tools").is_some());
+        assert!(config.system_prompts.get("configurator").is_some());
+        assert!(config.system_prompts.get("project_summary").is_some());
     }
 }

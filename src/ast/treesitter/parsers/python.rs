@@ -123,7 +123,7 @@ pub fn parse_type(parent: &Node, code: &str) -> Option<TypeDef> {
         }
         "call" => {
             let function = parent.child_by_field_name("function").unwrap();
-            let mut dtype = parse_type(&function, code).unwrap_or(TypeDef::default());
+            let mut dtype = parse_type(&function, code).unwrap_or_default();
             dtype.inference_info = Some(code.slice(parent.byte_range()).to_string());
             return Some(dtype);
         }
@@ -200,7 +200,7 @@ fn parse_function_arg(parent: &Node, code: &str) -> Vec<FunctionArg> {
 }
 
 const SPECIAL_SYMBOLS: &str = "{}(),.;_|&";
-const PYTHON_KEYWORDS: [&'static str; 35] = [
+const PYTHON_KEYWORDS: [&str; 35] = [
     "False", "None", "True", "and", "as", "assert", "async", "await", "break", "class",
     "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global",
     "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise",
@@ -223,7 +223,7 @@ impl PythonParser {
         decl.ast_fields.language = info.ast_fields.language;
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
         decl.ast_fields.is_error = info.ast_fields.is_error;
 
@@ -263,7 +263,7 @@ impl PythonParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             });
 
             decl.ast_fields.definition_range = body.range();
@@ -300,14 +300,14 @@ impl PythonParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: info.ast_fields.clone(),
                 node: right,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
         if let Some(body) = info.node.child_by_field_name("body") {
             candidates.push_back(CandidateInfo {
                 ast_fields: info.ast_fields.clone(),
                 node: body,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
 
@@ -330,7 +330,7 @@ impl PythonParser {
                         fields.language = info.ast_fields.language;
                         fields.full_range = info.node.range();
                         fields.file_path = info.ast_fields.file_path.clone();
-                        fields.parent_guid = Some(info.parent_guid.clone());
+                        fields.parent_guid = Some(info.parent_guid);
                         fields.guid = get_guid();
                         fields.name = code.slice(left.byte_range()).to_string();
                         fields.is_error = info.ast_fields.is_error;
@@ -365,7 +365,7 @@ impl PythonParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: info.ast_fields.clone(),
                             node: left,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         });
                     }
                     "list_pattern" | "tuple_pattern" | "pattern_list" => {
@@ -418,7 +418,7 @@ impl PythonParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: definition,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -438,7 +438,7 @@ impl PythonParser {
                                 decl.ast_fields.language = info.ast_fields.language;
                                 decl.ast_fields.full_range = info.node.range();
                                 decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-                                decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                                decl.ast_fields.parent_guid = Some(info.parent_guid);
                                 decl.ast_fields.guid = get_guid();
                                 decl.ast_fields.name = text.to_string();
                                 decl.type_.inference_info = Some(code.slice(value.byte_range()).to_string());
@@ -454,7 +454,7 @@ impl PythonParser {
                                 candidates.push_back(CandidateInfo {
                                     ast_fields: info.ast_fields.clone(),
                                     node: child,
-                                    parent_guid: info.parent_guid.clone(),
+                                    parent_guid: info.parent_guid,
                                 });
                             }
                         }
@@ -467,9 +467,9 @@ impl PythonParser {
                 usage.ast_fields.language = info.ast_fields.language;
                 usage.ast_fields.full_range = info.node.range();
                 usage.ast_fields.file_path = info.ast_fields.file_path.clone();
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
                 usage.ast_fields.is_error = info.ast_fields.is_error;
@@ -480,19 +480,17 @@ impl PythonParser {
                 let name = code.slice(attribute.byte_range()).to_string();
                 let mut def = VariableDefinition::default();
                 def.type_ = info.node.parent()
-                    .map(|x| x.child_by_field_name("type"))
-                    .flatten()
-                    .map(|x| parse_type(&x, code))
-                    .flatten()
+                    .and_then(|x| x.child_by_field_name("type"))
+                    .and_then(|x| parse_type(&x, code))
                     .unwrap_or_default();
                 def.ast_fields.name = name;
                 def.ast_fields.language = info.ast_fields.language;
                 def.ast_fields.full_range = info.node.range();
                 def.ast_fields.file_path = info.ast_fields.file_path.clone();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.caller_guid = Some(get_guid());
                 def.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     def.ast_fields.guid = caller_guid;
                 }
                 def.ast_fields.is_error = info.ast_fields.is_error;
@@ -501,7 +499,7 @@ impl PythonParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: def.ast_fields.clone(),
                     node: object_node,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
             }
@@ -525,7 +523,7 @@ impl PythonParser {
                     def.ast_fields.language = info.ast_fields.language;
                     def.ast_fields.full_range = info.node.range();
                     def.ast_fields.file_path = info.ast_fields.file_path.clone();
-                    def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                    def.ast_fields.parent_guid = Some(info.parent_guid);
                     def.ast_fields.guid = get_guid();
                     def.ast_fields.is_error = false;
                     symbols.push(Arc::new(RwLock::new(Box::new(def))));
@@ -537,7 +535,7 @@ impl PythonParser {
                 def.ast_fields.full_range = info.node.range();
                 def.ast_fields.file_path = info.ast_fields.file_path.clone();
                 def.ast_fields.full_range = info.node.range();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
 
                 let mut base_path_component: Vec<String> = Default::default();
                 if let Some(module_name) = info.node.child_by_field_name("module_name") {
@@ -618,7 +616,7 @@ impl PythonParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -632,7 +630,7 @@ impl PythonParser {
         decl.ast_fields.language = info.ast_fields.language;
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.is_error = info.ast_fields.is_error;
         if let Some(parent_node) = info.node.parent() {
             if parent_node.kind() == "decorated_definition" {
@@ -680,10 +678,10 @@ impl PythonParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body_node,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             });
         } else {
-            decl.ast_fields.declaration_range = decl.ast_fields.full_range.clone();
+            decl.ast_fields.declaration_range = decl.ast_fields.full_range;
         }
 
         decl.ast_fields.childs_guid = get_children_guids(&decl.ast_fields.guid, &symbols);
@@ -715,7 +713,7 @@ impl PythonParser {
                 usage.ast_fields.language = LanguageId::Python;
                 usage.ast_fields.full_range = parent.range();
                 usage.ast_fields.file_path = path.clone();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.guid = get_guid();
                 usage.ast_fields.is_error = true;
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -728,14 +726,14 @@ impl PythonParser {
                 usage.ast_fields.language = LanguageId::Python;
                 usage.ast_fields.full_range = parent.range();
                 usage.ast_fields.file_path = path.clone();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.guid = get_guid();
                 usage.ast_fields.is_error = true;
 
                 let object_node = parent.child_by_field_name("object").unwrap();
                 let usages = self.parse_error_usages(&object_node, code, path, parent_guid);
                 if let Some(last) = usages.last() {
-                    usage.ast_fields.caller_guid = last.read().fields().parent_guid.clone();
+                    usage.ast_fields.caller_guid = last.read().fields().parent_guid;
                 }
                 symbols.extend(usages);
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -757,9 +755,9 @@ impl PythonParser {
         decl.ast_fields.language = LanguageId::Python;
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
-        if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+        if let Some(caller_guid) = info.ast_fields.caller_guid {
             decl.ast_fields.guid = caller_guid;
         }
         decl.ast_fields.caller_guid = Some(get_guid());
@@ -771,14 +769,14 @@ impl PythonParser {
         for i in 0..arguments_node.child_count() {
             let child = arguments_node.child(i).unwrap();
             let text = code.slice(child.byte_range());
-            if SPECIAL_SYMBOLS.contains(&text) { continue; }
+            if SPECIAL_SYMBOLS.contains(text) { continue; }
 
             let mut new_ast_fields = info.ast_fields.clone();
             new_ast_fields.caller_guid = None;
             candidates.push_back(CandidateInfo {
                 ast_fields: new_ast_fields.clone(),
                 node: child,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
         symbols.extend(self.find_error_usages(&arguments_node, code, &info.ast_fields.file_path, &decl.ast_fields.guid));
@@ -795,7 +793,7 @@ impl PythonParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: decl.ast_fields.clone(),
                     node: object,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
                 let attribute = function_node.child_by_field_name("attribute").unwrap();
                 decl.ast_fields.name = code.slice(attribute.byte_range()).to_string();
@@ -804,7 +802,7 @@ impl PythonParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: info.ast_fields.clone(),
                     node: function_node,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
             }
         }
@@ -823,7 +821,7 @@ impl PythonParser {
 
         let mut candidates = VecDeque::from(vec![CandidateInfo {
             ast_fields,
-            node: parent.clone(),
+            node: *parent,
             parent_guid: get_guid(),
         }]);
         while let Some(candidate) = candidates.pop_front() {
@@ -831,9 +829,9 @@ impl PythonParser {
             symbols.extend(symbols_l);
         }
         let guid_to_symbol_map = symbols.iter()
-            .map(|s| (s.clone().read().guid().clone(), s.clone())).collect::<HashMap<_, _>>();
+            .map(|s| (*s.clone().read().guid(), s.clone())).collect::<HashMap<_, _>>();
         for symbol in symbols.iter_mut() {
-            let guid = symbol.read().guid().clone();
+            let guid = *symbol.read().guid();
             if let Some(parent_guid) = symbol.read().parent_guid() {
                 if let Some(parent) = guid_to_symbol_map.get(parent_guid) {
                     parent.write().fields_mut().childs_guid.push(guid);
@@ -847,7 +845,7 @@ impl PythonParser {
             sym.fields_mut().childs_guid = sym.fields_mut().childs_guid.iter()
                 .sorted_by_key(|x| {
                     guid_to_symbol_map.get(*x).unwrap().read().full_range().start_byte
-                }).map(|x| x.clone()).collect();
+                }).copied().collect();
         }
 
         symbols
@@ -868,7 +866,7 @@ impl SkeletonFormatter for PythonSkeletonFormatter {
         }
         res_line = format!("{}\n", res_line);
         for child in children {
-            let child_symbol = guid_to_info.get(&child).unwrap();
+            let child_symbol = guid_to_info.get(child).unwrap();
             match child_symbol.symbol_type {
                 SymbolType::FunctionDeclaration => {
                     let content = child_symbol.get_declaration_content(text).unwrap();
@@ -934,7 +932,7 @@ impl SkeletonFormatter for PythonSkeletonFormatter {
                 res_line = content_lines;
             }
 
-            let res_line = self.preprocess_content(Vec::from_iter(res_line.into_iter()));
+            let res_line = self.preprocess_content(Vec::from_iter(res_line));
             let declaration = res_line.join("\n");
             return (declaration, (symbol.full_range.start_point.row, row));
         }

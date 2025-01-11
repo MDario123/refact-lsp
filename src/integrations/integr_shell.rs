@@ -150,7 +150,7 @@ impl Tool for ToolShell {
         _ccx: Arc<AMutex<AtCommandsContext>>,
         args: &HashMap<String, Value>
     ) -> Result<MatchConfirmDeny, String> {
-        let command_to_match = self.command_to_match_against_confirm_deny(&args).map_err(|e| {
+        let command_to_match = self.command_to_match_against_confirm_deny(args).map_err(|e| {
             format!("Error getting tool command to match: {}", e)
         })?;
         if command_to_match.is_empty() {

@@ -120,7 +120,7 @@ fn _increase_counter_commit(db: &sled::Db, counter_key: &[u8], adjustment: i32) 
         return;
     }
     match db.update_and_fetch(counter_key, |counter| {
-        let counter = counter.map(|v| serde_cbor::from_slice::<i32>(&v).unwrap()).unwrap_or(0) + adjustment;
+        let counter = counter.map(|v| serde_cbor::from_slice::<i32>(v).unwrap()).unwrap_or(0) + adjustment;
         Some(serde_cbor::to_vec(&counter).unwrap())
     }) {
         Ok(_) => {},
@@ -146,12 +146,12 @@ pub async fn flush_sled_batch(
         let sleddb = ast_index_locked.sleddb.clone();
         let batch_arc = std::mem::replace(&mut ast_index_locked.sledbatch, Arc::new(AMutex::new(sled::Batch::default())));
         let was_counter = std::mem::replace(&mut ast_index_locked.batch_counter, 0);
-        let counters_increase = std::mem::replace(&mut ast_index_locked.counters_increase, HashMap::new());
+        let counters_increase = std::mem::take(&mut ast_index_locked.counters_increase);
         drop(ast_index_locked);
         if was_counter > 0 {
             // tracing::info!("flushing {} sled batches", was_counter);
             let mut batch = batch_arc.lock().await;
-            let batch_to_apply = std::mem::replace(&mut *batch, sled::Batch::default());
+            let batch_to_apply = std::mem::take(&mut *batch);
             if let Err(e) = sleddb.apply_batch(batch_to_apply) {
                 tracing::error!("failed to apply batch: {:?}", e);
             }
@@ -174,7 +174,7 @@ pub async fn doc_add(
 ) -> Result<(Vec<Arc<AstDefinition>>, String), String>
 {
     let file_global_path = filesystem_path_to_double_colon_path(cpath);
-    let (defs, language) = parse_anything_and_add_file_path(&cpath, text, errors)?;   // errors mostly "no such parser" here
+    let (defs, language) = parse_anything_and_add_file_path(cpath, text, errors)?;   // errors mostly "no such parser" here
     let db = ast_index.lock().await.sleddb.clone();
     let batch_arc = flush_sled_batch(ast_index.clone(), 1000).await;
     let mut batch = batch_arc.lock().await;
@@ -499,11 +499,11 @@ async fn _connect_usages_helper(
                 magnifying_glass_pairs.push((language, klass));
             }
             let mut variants = Vec::<String>::new();
-            if magnifying_glass_pairs.len() == 0 {
+            if magnifying_glass_pairs.is_empty() {
                 variants.push(to_resolve.to_string());
             } else {
                 let substitutions_of_each_pair: Vec<Vec<String>> = magnifying_glass_pairs.iter().map(|(language, klass)| {
-                    let mut substitutions = ucx.derived_from_map.get(format!("{}🔎{}", language, klass).as_str()).cloned().unwrap_or_else(|| vec![]);
+                    let mut substitutions = ucx.derived_from_map.get(format!("{}🔎{}", language, klass).as_str()).cloned().unwrap_or_else(std::vec::Vec::new);
                     substitutions.insert(0, klass.clone());
                     substitutions.iter().map(|s| s.strip_prefix(&format!("{}🔎", language)).unwrap_or(s).to_string()).collect()
                 }).collect();
@@ -552,13 +552,13 @@ async fn _connect_usages_helper(
                         }
                     }
                 }
-                if found.len() > 0 {
+                if !found.is_empty() {
                     break;
                 }
             }
             debug_print!("        found {:?}", found);
 
-            if found.len() == 0 {
+            if found.is_empty() {
                 ucx.usages_not_found += 1;
                 continue;
             }
@@ -597,7 +597,7 @@ async fn _derived_from(db: &sled::Db) -> IndexMap<String, Vec<String>>
         if parts.len() == 2 {
             let parent = parts[0].trim().strip_prefix(t_prefix).unwrap_or(parts[0].trim()).to_string();
             let child = value_string.trim().to_string();
-            let entry = derived_map.entry(child).or_insert_with(Vec::new);
+            let entry = derived_map.entry(child).or_default();
             if !entry.contains(&parent) {
                 entry.push(parent);
             }
@@ -690,7 +690,7 @@ pub async fn definitions(ast_index: Arc<AMutex<AstDB>>, double_colon_path: &str)
             if parts.len() == 2 && parts[0] == c_prefix2 {
                 let full_path = parts[1].trim().to_string();
                 let colon_count = full_path.matches("::").count();
-                path_groups.entry(colon_count).or_insert_with(Vec::new).push(full_path);
+                path_groups.entry(colon_count).or_default().push(full_path);
             } else if parts.len() != 2 {
                 tracing::error!("c-record has more than two ⚡ key was: {}", key_string);
             }
@@ -748,7 +748,7 @@ pub async fn type_hierarchy(ast_index: Arc<AMutex<AstDB>>, language: String, sub
             if parts.len() == 2 {
                 let parent = parts[0].trim().strip_prefix("classes|").unwrap_or(parts[0].trim()).to_string();
                 let child = value_string.trim().to_string();
-                hierarchy_map.entry(parent).or_insert_with(Vec::new).push(child);
+                hierarchy_map.entry(parent).or_default().push(child);
             }
         }
     }

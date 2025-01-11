@@ -74,7 +74,7 @@ pub fn read_integrations_d(
 
     for project_config_dir in project_config_dirs {
         // Read config_folder/integr_name.yaml and make a record, even if the file doesn't exist
-        let config_dir = if project_config_dir == "" { global_config_dir.clone() } else { PathBuf::from(project_config_dir.clone()) };
+        let config_dir = if project_config_dir.is_empty() { global_config_dir.clone() } else { PathBuf::from(project_config_dir.clone()) };
         for integr_name in lst.iter() {
             let path_str = join_config_path(&config_dir, integr_name);
             let path = PathBuf::from(path_str.clone());
@@ -243,8 +243,8 @@ pub fn read_integrations_d(
     // 5. Fill confirmation in each record
     for rec in &mut result {
         if let Some(confirmation) = rec.config_unparsed.get("confirmation") {
-            rec.ask_user = get_array_of_str_or_empty(&confirmation, "/ask_user");
-            rec.deny = get_array_of_str_or_empty(&confirmation, "/deny");
+            rec.ask_user = get_array_of_str_or_empty(confirmation, "/ask_user");
+            rec.deny = get_array_of_str_or_empty(confirmation, "/deny");
         } else {
             let schema = match crate::integrations::integration_from_name(rec.integr_name.as_str()) {
                 Ok(i) => {
@@ -438,8 +438,8 @@ pub async fn integration_config_get(
     let mut integration_box = crate::integrations::integration_from_name(integr_name.as_str())?;
     result.integr_schema = {
         let y: serde_yaml::Value = serde_yaml::from_str(integration_box.integr_schema()).unwrap();
-        let j = serde_json::to_value(y).unwrap();
-        j
+        
+        serde_json::to_value(y).unwrap()
     };
 
     if exists {
@@ -479,7 +479,7 @@ pub async fn integration_config_get(
                 };
             }
             Err(e) => {
-                return Err(format!("failed to read configuration file: {}", e.to_string()));
+                return Err(format!("failed to read configuration file: {}", e));
             }
         };
     }
@@ -540,8 +540,8 @@ mod tests {
             let integration_box = crate::integrations::integration_from_name(name).unwrap();
             let schema_json = {
                 let y: serde_yaml::Value = serde_yaml::from_str(integration_box.integr_schema()).unwrap();
-                let j = serde_json::to_value(y).unwrap();
-                j
+                
+                serde_json::to_value(y).unwrap()
             };
             let schema_yaml: serde_yaml::Value = serde_json::from_value(schema_json.clone()).unwrap();
             let compare_me1 = serde_yaml::to_string(&schema_yaml).unwrap();

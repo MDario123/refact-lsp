@@ -14,7 +14,7 @@ async fn table_stats_by_lang(records: &Vec<RHData>) -> Value {
         stats.update(r);
     }
 
-    let mut lang_stats_records: Vec<RHTableStatsByLang> = lang2stats.iter().map(|(_, v)| v.clone()).collect();
+    let mut lang_stats_records: Vec<RHTableStatsByLang> = lang2stats.values().cloned().collect();
     lang_stats_records.sort_by(|a, b| b.total.cmp(&a.total));
     json!({
         "data": lang_stats_records,
@@ -72,7 +72,7 @@ async fn get_context(records: &Vec<RHData>) -> Result<DashboardContext, String> 
     if records.is_empty() {
         return Err("no records".to_string())
     }
-    let from_year = DateTime::from_timestamp(records.get(0).unwrap().ts_end, 0).unwrap().year();
+    let from_year = DateTime::from_timestamp(records.first().unwrap().ts_end, 0).unwrap().year();
     let mut date2week_n: HashMap<String, i32> = HashMap::new();
 
     for r in records {

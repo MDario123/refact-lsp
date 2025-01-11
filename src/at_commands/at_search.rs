@@ -16,7 +16,7 @@ pub fn text_on_clip(query: &String, from_tool_call: bool) -> String {
     if !from_tool_call {
         return query.clone();
     }
-    return format!("performed vecdb search, results below");
+    "performed vecdb search, results below".to_string()
 }
 
 
@@ -101,7 +101,7 @@ impl AtCommand for AtSearch {
         _cmd: &mut AtCommandMember,
         args: &mut Vec<AtCommandMember>,
     ) -> Result<(Vec<ContextEnum>, String), String> {
-        let args1 = args.iter().map(|x|x.clone()).collect::<Vec<_>>();
+        let args1 = args.to_vec();
         info!("execute @search {:?}", args1.iter().map(|x|x.text.clone()).collect::<Vec<_>>());
 
         let query = args.iter().map(|x|x.text.clone()).collect::<Vec<_>>().join(" ");

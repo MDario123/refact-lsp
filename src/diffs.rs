@@ -80,7 +80,7 @@ pub async fn correct_and_validate_chunks(
         chunk: &DiffChunk,
     ) -> Result<(String, bool), String>{
         let path = PathBuf::from(path_str);
-        return if path.is_file() {
+        if path.is_file() {
             Ok((path_str.clone(), true))
         } else if path.is_dir() {
             Ok((path_str.clone(), false))
@@ -219,7 +219,7 @@ fn apply_chunks(
 
     let mut outputs = HashMap::new();
     for (chunk_id, chunk) in chunks.iter().map(|(id, c)|(*id, *c)) {
-        let (lines_orig_new, out) = apply_chunk_to_text_fuzzy(chunk_id, &lines_orig, &chunk, max_fuzzy_n);
+        let (lines_orig_new, out) = apply_chunk_to_text_fuzzy(chunk_id, &lines_orig, chunk, max_fuzzy_n);
         if let ApplyDiffOutput::Ok() = out {
             lines_orig = lines_orig_new;
         }
@@ -248,7 +248,7 @@ fn undo_chunks(
         if output == ApplyDiffOutput::Ok() {
             lines_orig_new = lines_orig_new.iter_mut().enumerate().map(|(idx, l)| {
                 l.line_n = idx + 1;
-                return l.clone();
+                l.clone()
             }).collect::<Vec<_>>();
             lines_orig = lines_orig_new;
         }
@@ -265,7 +265,7 @@ fn check_add(c: &DiffChunk) -> ApplyDiffOutput {
     if !path.is_absolute() {
         return ApplyDiffOutput::Err(format!("Failed to Add path '{}'\nReason: path must be absolute", c.file_name));
     }
-    return ApplyDiffOutput::Ok();
+    ApplyDiffOutput::Ok()
 }
 
 fn check_remove(c: &DiffChunk) -> ApplyDiffOutput {
@@ -359,7 +359,7 @@ pub fn apply_diff_chunks_to_text(
         if !chunks_undo_edit.is_empty() {
             let mut chunks_undo_copy = chunks_undo_edit.clone();
             chunks_undo_copy.sort_by_key(|c| c.0);
-            let (new_lines, _) = undo_chunks(chunks_undo_copy, &file_text, max_fuzzy_n, line_ending); // XXX: only undo what is necessary
+            let (new_lines, _) = undo_chunks(chunks_undo_copy, file_text, max_fuzzy_n, line_ending); // XXX: only undo what is necessary
             file_text_copy = new_lines.iter().map(|l| l.text.as_str()).collect::<Vec<_>>().join(line_ending);
         }
 

@@ -76,10 +76,10 @@ impl ScratchpadAbstract for GenericChatScratchpad {
 
         self.dd.stop_list.clear();
         if !self.t.eot.is_empty() {
-            self.t.assert_one_token(&self.t.eot.as_str())?;
+            self.t.assert_one_token(self.t.eot.as_str())?;
             self.dd.stop_list.push(self.t.eot.clone());
         }
-        if self.token_esc.len() > 0 {
+        if !self.token_esc.is_empty() {
             self.dd.stop_list.push(self.token_esc.clone());
         } else {
             self.dd.stop_list.push(self.keyword_syst.clone());
@@ -115,19 +115,19 @@ impl ScratchpadAbstract for GenericChatScratchpad {
             if msg.role == "system" {
                 prompt.push_str(self.keyword_syst.as_str());
                 prompt.push_str(content_text_only.as_str());
-                prompt.push_str("\n");
+                prompt.push('\n');
             } else if msg.role == "user" {
                 prompt.push_str(self.keyword_user.as_str());
                 prompt.push_str(content_text_only.as_str());
-                prompt.push_str("\n");
+                prompt.push('\n');
             } else if msg.role == "cd_instruction" {
                 prompt.push_str(self.keyword_user.as_str());
                 prompt.push_str(content_text_only.as_str());
-                prompt.push_str("\n");
+                prompt.push('\n');
             } else if msg.role == "assistant" {
                 prompt.push_str(self.keyword_asst.as_str());
                 prompt.push_str(content_text_only.as_str());
-                prompt.push_str("\n");
+                prompt.push('\n');
             } else if msg.role == "context_file" {
                 let vector_of_context_files: Vec<ContextFile> = serde_json::from_str(&content_text_only).map_err(|e|error!("parsing context_files has failed: {}; content: {}", e, &msg.content.content_text_only())).unwrap_or(vec![]);
                 for context_file in vector_of_context_files {

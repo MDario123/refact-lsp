@@ -297,7 +297,7 @@ fn _lance_fetch_all_records_measuring_distance(
             None => { -1.0 }
             Some(embedding) => {
                 // info!("cosine_distance, embd\n{:?}\nv\n{:?}\n", embedding, gathered_vec);
-                cosine_distance(&embedding, &gathered_vec)
+                cosine_distance(embedding, &gathered_vec)
             }
         };
         let embedding = match include_embedding {
@@ -336,7 +336,7 @@ pub async fn lance_search(
         .try_collect::<Vec<_>>().await?;
     let record_batch = arrow::compute::concat_batches(&my_schema_arc, &query)?;
 
-    match _lance_fetch_all_records_measuring_distance(record_batch, false, Some(&embedding)) {
+    match _lance_fetch_all_records_measuring_distance(record_batch, false, Some(embedding)) {
         Ok(records) => {
             let sorted = records.into_iter().sorted_unstable_by(|a, b|a.distance.partial_cmp(&b.distance).unwrap_or(std::cmp::Ordering::Equal)).collect::<Vec<_>>();
             Ok(sorted)
@@ -466,7 +466,7 @@ pub async fn vectorize_dirty_memories(
             .build()
         {
             Ok(res) => Ok(res),
-            Err(err) => return Err(format!("{:?}", err))
+            Err(err) => Err(format!("{:?}", err))
         }
     }
 

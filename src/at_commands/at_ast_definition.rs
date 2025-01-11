@@ -98,7 +98,7 @@ impl AtCommand for AtAstDefinition {
         cmd: &mut AtCommandMember,
         args: &mut Vec<AtCommandMember>,
     ) -> Result<(Vec<ContextEnum>, String), String> {
-        let mut arg_symbol = match args.get(0) {
+        let mut arg_symbol = match args.first() {
             Some(x) => x.clone(),
             None => {
                 cmd.ok = false;
@@ -120,7 +120,7 @@ impl AtCommand for AtAstDefinition {
             let file_paths = defs.iter().map(|x| x.cpath.clone()).collect::<Vec<_>>();
             let short_file_paths = crate::files_correction::shortify_paths(gcx.clone(), &file_paths).await;
 
-            let text = if let Some(path0) = short_file_paths.get(0) {
+            let text = if let Some(path0) = short_file_paths.first() {
                 if short_file_paths.len() > 1 {
                     format!("`{}` (defined in {} and other files)", &arg_symbol.text, path0)
                 } else {
@@ -142,7 +142,7 @@ impl AtCommand for AtAstDefinition {
                     usefulness: 100.0,
                 });
             }
-            Ok((result.into_iter().map(|x| ContextEnum::ContextFile(x)).collect::<Vec<ContextEnum>>(), text))
+            Ok((result.into_iter().map(ContextEnum::ContextFile).collect::<Vec<ContextEnum>>(), text))
         } else {
             Err("attempt to use @definition with no ast turned on".to_string())
         }

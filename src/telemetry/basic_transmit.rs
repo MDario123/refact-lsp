@@ -108,13 +108,13 @@ pub async fn basic_telemetry_compress(
 pub async fn basic_telemetry_send(
     global_context: Arc<ARwLock<GlobalContext>>,
     caps: Arc<RwLock<CodeAssistantCaps>>,
-) -> () {
+) {
     let (cache_dir, api_key, enable_basic_telemetry) = {
         let cx = global_context.write().await;
         (
             cx.cache_dir.clone(),
             cx.cmdline.api_key.clone(),
-            cx.cmdline.basic_telemetry.clone(),
+            cx.cmdline.basic_telemetry,
         )
     };
     let (dir_compressed, dir_sent) = telemetry_storage_dirs(&cache_dir).await;
@@ -143,7 +143,7 @@ pub async fn basic_telemetry_send(
 
 pub async fn telemetry_background_task(
     global_context: Arc<ARwLock<GlobalContext>>,
-) -> () {
+) {
     loop {
         match try_load_caps_quickly_if_not_present(global_context.clone(), 0).await {
             Ok(caps) => {

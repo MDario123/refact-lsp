@@ -35,15 +35,15 @@ fn make_cache(paths: &Vec<PathBuf>, workspace_folders: &Vec<PathBuf>) -> (
     for path in paths {
         let path_str = path.to_str().unwrap_or_default().to_string();
 
-        cache_correction.entry(path_str.clone()).or_insert_with(HashSet::new).insert(path_str.clone());
+        cache_correction.entry(path_str.clone()).or_default().insert(path_str.clone());
         // chop off directory names one by one
         let mut index = 0;
-        while let Some(slashpos) = path_str[index .. ].find(|c| c == '/' || c == '\\') {
+        while let Some(slashpos) = path_str[index .. ].find(['/', '\\']) {
             let absolute_slashpos = index + slashpos;
             index = absolute_slashpos + 1;
             let slashpos_to_end = &path_str[index .. ];
             if !slashpos_to_end.is_empty() {
-                cache_correction.entry(slashpos_to_end.to_string()).or_insert_with(HashSet::new).insert(path_str.clone());
+                cache_correction.entry(slashpos_to_end.to_string()).or_default().insert(path_str.clone());
             }
         }
     }
@@ -115,7 +115,7 @@ pub async fn files_cache_rebuild_as_needed(global_context: Arc<ARwLock<GlobalCon
         *cache_dirty_ref = 0.0;
     }
 
-    return (cache_correction_arc, cache_shortened_arc);
+    (cache_correction_arc, cache_shortened_arc)
 }
 
 
@@ -141,9 +141,9 @@ fn winpath_normalize(p: &str) -> PathBuf {
 
 pub fn to_pathbuf_normalize(path: &String) -> PathBuf {
     if cfg!(target_os = "windows") {
-        PathBuf::from(winpath_normalize(path))
+        winpath_normalize(path)
     } else {
-        PathBuf::from(canonical_path(path))
+        canonical_path(path)
     }
 }
 
@@ -155,7 +155,7 @@ async fn complete_path_with_project_dir(
     fn path_exists(path: &PathBuf, is_dir: bool) -> bool {
         (is_dir && path.is_dir()) || (!is_dir && path.is_file())
     }
-    let candidate_path = to_pathbuf_normalize(&correction_candidate);
+    let candidate_path = to_pathbuf_normalize(correction_candidate);
     let project_dirs = get_project_dirs(gcx.clone()).await;
     for p in project_dirs {
         if path_exists(&candidate_path, is_dir) && candidate_path.starts_with(&p) {
@@ -176,7 +176,7 @@ async fn complete_path_with_project_dir(
                 .unwrap_or("".to_string());
             let last_component_duplicated = p
                 .join(&last_component)
-                .join(&candidate_path.strip_prefix(&p).unwrap_or(candidate_path.as_path()));
+                .join(candidate_path.strip_prefix(&p).unwrap_or(candidate_path.as_path()));
             if path_exists(&last_component_duplicated, is_dir) {
                 info!(
                     "autocorrected by duplicating the project last component: {} -> {}",
@@ -205,7 +205,7 @@ pub async fn correct_to_nearest_filename(
     // (another thread never writes to the map itself, it can only replace the arc with a different map)
 
     if let Some(fixed) = (*cache_correction_arc).get(&correction_candidate.clone()) {
-        return fixed.into_iter().cloned().collect::<Vec<String>>();
+        return fixed.iter().cloned().collect::<Vec<String>>();
     } else {
         info!("not found {:?} in cache_correction", correction_candidate);
     }
@@ -215,7 +215,7 @@ pub async fn correct_to_nearest_filename(
         return fuzzy_search(correction_candidate, cache_fuzzy_arc.iter().cloned(), top_n, &['/', '\\']);
     }
 
-    return vec![];
+    vec![]
 }
 
 pub async fn correct_to_nearest_dir_path(
@@ -235,15 +235,12 @@ pub async fn correct_to_nearest_dir_path(
     let (cache_correction_arc, cache_fuzzy_set) = files_cache_rebuild_as_needed(gcx.clone()).await;
     let mut paths_correction_map = HashMap::new();
     for (k, v) in cache_correction_arc.iter() {
-        match get_parent(k) {
-            Some(k_parent) => {
-                let v_parents = v.iter().filter_map(|x| get_parent(x)).collect::<Vec<_>>();
-                if v_parents.is_empty() {
-                    continue;
-                }
-                paths_correction_map.entry(k_parent.clone()).or_insert_with(HashSet::new).extend(v_parents);
-            },
-            None => {}
+        if let Some(k_parent) = get_parent(k) {
+            let v_parents = v.iter().filter_map(get_parent).collect::<Vec<_>>();
+            if v_parents.is_empty() {
+                continue;
+            }
+            paths_correction_map.entry(k_parent.clone()).or_insert_with(HashSet::new).extend(v_parents);
         }
     }
     if let Some(res) = paths_correction_map.get(correction_candidate).map(|x|x.iter().cloned().collect::<Vec<_>>()) {
@@ -312,7 +309,7 @@ pub async fn shortify_paths(gcx: Arc<ARwLock<GlobalContext>>, paths: &Vec<String
 
 fn _shortify_paths_from_indexed(paths: &Vec<String>, indexed_paths: Arc<HashSet<String>>, workspace_folders: Vec<String>) -> Vec<String>
 {
-    paths.into_iter().map(|path| {
+    paths.iter().map(|path| {
         // Get the length of the workspace part of the path
         let workspace_part_len = workspace_folders.iter()
             .filter_map(|workspace_dir| {

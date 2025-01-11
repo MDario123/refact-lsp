@@ -35,7 +35,7 @@ pub fn create_data_accumulator_for_accepted_snippet(
         snip.model.clone(),
         init_file_text.clone(),
         snip.grey_text.clone(),
-        snip.finished_ts.clone()
+        snip.finished_ts
     ))
 }
 
@@ -74,11 +74,8 @@ pub async fn compress_tele_completion_to_file(
         let json_dict = serde_json::to_value(rec).unwrap();
         records.push(json_dict);
     }
-    match compress_tele_records_to_file(cx.clone(), records, "comp_counters".to_string(), "comp".to_string()).await {
-        Ok(_) => {
-            cx.write().await.telemetry.write().unwrap().snippet_data_accumulators.clear();
-        },
-        Err(_) => {}
+    if let Ok(_) = compress_tele_records_to_file(cx.clone(), records, "comp_counters".to_string(), "comp".to_string()).await {
+        cx.write().await.telemetry.write().unwrap().snippet_data_accumulators.clear();
     };
 }
 
@@ -132,7 +129,7 @@ fn update_remaining_counters(value: f64, counter_0: &mut i32, counter_0_50: &mut
         *counter_80_100 += 1;
     } else if value == 1. {
         *counter_100 += 1;
-    } else {}
+    } 
 }
 
 

@@ -114,7 +114,7 @@ async fn _chat(
     body_bytes: &hyper::body::Bytes,
     allow_at: bool
 ) -> Result<Response<Body>, ScratchError> {
-    let mut chat_post: ChatPost = serde_json::from_slice::<ChatPost>(&body_bytes).map_err(|e| {
+    let mut chat_post: ChatPost = serde_json::from_slice::<ChatPost>(body_bytes).map_err(|e| {
         tracing::warn!("chat handler cannot parse input:\n{:?}", body_bytes);
         ScratchError::new(StatusCode::BAD_REQUEST, format!("JSON problem: {}", e))
     })?;
@@ -149,7 +149,7 @@ async fn _chat(
         caps.clone(),
         &chat_post,
     ).await.map_err(|e| {
-        ScratchError::new(StatusCode::BAD_REQUEST, format!("{}", e))
+        ScratchError::new(StatusCode::BAD_REQUEST, e.to_string())
     })?;
     if chat_post.parameters.max_new_tokens == 0 {
         chat_post.parameters.max_new_tokens = chat_post.max_tokens;

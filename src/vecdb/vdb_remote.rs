@@ -39,7 +39,7 @@ impl VecdbSearch for VecDbRemote {
         let result: Vec<SearchResult> = serde_json::from_str(&body).map_err(|e| {
             format!("vecdb JSON problem: {}", e)
         })?;
-        if result.len() == 0 {
+        if result.is_empty() {
             return Err("Vecdb search result is empty".to_string());
         }
         let result0 = result[0].clone();

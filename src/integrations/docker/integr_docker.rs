@@ -33,7 +33,7 @@ impl SettingsDocker {
             Some(SshConfig {
                 host: self.ssh_host.clone(),
                 user: self.ssh_user.clone(),
-                port: self.ssh_port.clone(),
+                port: self.ssh_port,
                 identity_file: if !self.ssh_identity_file.is_empty()
                     { Some(self.ssh_identity_file.clone()) } else { None },
             })
@@ -100,7 +100,7 @@ impl IntegrationTrait for ToolDocker {
 impl ToolDocker {
     pub async fn command_execute(&self, command: &str, gcx: Arc<ARwLock<GlobalContext>>, fail_if_stderr_is_not_empty: bool, verbose_error: bool) -> Result<(String, String), String>
     {
-        let mut command_args = split_command(&command)?;
+        let mut command_args = split_command(command)?;
 
         if command_is_interactive_or_blocking(&command_args) {
             return Err("Docker commands that are interactive or blocking are not supported".to_string());
@@ -192,15 +192,15 @@ impl Tool for ToolDocker {
 }
 
 fn parse_command(args: &HashMap<String, Value>) -> Result<String, String>{
-    return match args.get("command") {
+    match args.get("command") {
         Some(Value::String(s)) => Ok(s.to_string()),
         Some(v) => Err(format!("argument `command` is not a string: {:?}", v)),
         None => Err("Missing argument `command`".to_string())
-    };
+    }
 }
 
 fn split_command(command: &str) -> Result<Vec<String>, String> {
-    let mut parsed_args = shell_words::split(&command).map_err(|e| e.to_string())?;
+    let mut parsed_args = shell_words::split(command).map_err(|e| e.to_string())?;
     if parsed_args.is_empty() {
         return Err("Parsed command is empty".to_string());
     }
@@ -254,7 +254,7 @@ fn command_is_interactive_or_blocking(command_args: &Vec<String>) -> bool
     COMMANDS_ALWAYS_BLOCKING.contains(&subcommand_specific)
 }
 
-fn command_append_label_if_creates_resource(command_args: &mut Vec<String>, label: &str) -> () {
+fn command_append_label_if_creates_resource(command_args: &mut Vec<String>, label: &str) {
     const COMMANDS_FOR_RESOURCE_CREATION: &[&[&str]] = &[
         &["build"],
         &["buildx", "build"],

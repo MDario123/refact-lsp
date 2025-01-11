@@ -213,7 +213,7 @@ impl Tool for ToolPatch {
         ).await {
             Ok(res) => res,
             Err((err, cd_instruction)) => {
-                return return_cd_instruction_or_error(&err, &cd_instruction, &tool_call_id, &usage);
+                return return_cd_instruction_or_error(&err, &cd_instruction, tool_call_id, &usage);
             }
         };
         assert!(!active_tickets.is_empty());
@@ -224,7 +224,7 @@ impl Tool for ToolPatch {
                 &tickets,
                 Some("recreate the ticket with correct filename in 📍-notation or change path argument".to_string()),
             );
-            return return_cd_instruction_or_error(&err, &cd_instruction, &tool_call_id, &usage);
+            return return_cd_instruction_or_error(&err, &cd_instruction, tool_call_id, &usage);
         }
         let mut res;
         loop {
@@ -244,7 +244,7 @@ impl Tool for ToolPatch {
         let mut diff_chunks = match res {
             Ok(res) => res,
             Err((err, cd_instruction)) => {
-                return return_cd_instruction_or_error(&err, &cd_instruction, &tool_call_id, &usage);
+                return return_cd_instruction_or_error(&err, &cd_instruction, tool_call_id, &usage);
             }
         };
         diff_apply(gcx.clone(), &mut diff_chunks).await.map_err(
@@ -260,7 +260,7 @@ impl Tool for ToolPatch {
             }
         ]
             .into_iter()
-            .map(|x| ContextEnum::ChatMessage(x))
+            .map(ContextEnum::ChatMessage)
             .collect::<Vec<_>>();
         Ok((false, results))
     }
@@ -294,10 +294,10 @@ impl Tool for ToolPatch {
     }
 
     fn confirm_deny_rules(&self) -> Option<IntegrationConfirmation> {
-        return Some(IntegrationConfirmation {
+        Some(IntegrationConfirmation {
             ask_user: vec!["patch*".to_string()],
             deny: vec![],
-        });
+        })
     }
 
     fn usage(&mut self) -> &mut Option<ChatUsage> {

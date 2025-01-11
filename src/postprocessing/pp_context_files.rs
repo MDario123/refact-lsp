@@ -78,7 +78,7 @@ fn collect_lines_from_files(
                 if s.symbol_type == SymbolType::FunctionDeclaration {
                     useful = 55.0;
                 }
-                colorize_if_more_useful(lines, s.full_line1() - 1, s.full_line2(), format!("{}", s.path()), useful);
+                colorize_if_more_useful(lines, s.full_line1() - 1, s.full_line2(), s.path().to_string(), useful);
             }
         }
         colorize_if_more_useful(lines, 0, lines.len(), "empty".to_string(), settings.useful_background);
@@ -131,7 +131,7 @@ async fn convert_input_into_usefullness(
                 if DEBUG >= 1 {
                     info!("+ search result {} {:?} {:.2}", s.path(), s.symbol_type, msg.usefulness);
                 }
-                colorize_if_more_useful(lines, s.full_line1() - 1, s.full_line2(), format!("{}", s.path()), msg.usefulness);
+                colorize_if_more_useful(lines, s.full_line1() - 1, s.full_line2(), s.path().to_string(), msg.usefulness);
                 let mut parent_path = s.official_path.clone();
                 if parent_path.len() > 1 {
                     // MyClass::f  ->  MyClass
@@ -257,7 +257,7 @@ async fn pp_limit_and_merge(
             files_mentioned_set.insert(line_ref.file_ref.cpath.clone());
             files_mentioned_sequence.push(line_ref.file_ref.cpath.clone());
             if !single_file_mode {
-                ntokens += count_tokens(&tokenizer.read().unwrap(), &line_ref.file_ref.cpath.as_str());
+                ntokens += count_tokens(&tokenizer.read().unwrap(), line_ref.file_ref.cpath.as_str());
                 ntokens += 5;  // a margin for any overhead: file_sep, new line, etc
             }
         }
@@ -309,7 +309,7 @@ async fn pp_limit_and_merge(
                 out.push_str("...\n".to_string().as_str());
             }
             out.push_str(&line_ref.line_content);
-            out.push_str("\n");
+            out.push('\n');
             prev_line = i;
         }
         if last_line > prev_line + 1 {

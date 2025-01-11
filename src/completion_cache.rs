@@ -88,13 +88,13 @@ pub fn cache_key_from_post(
     // Change this function only together with the function below, it fills the cache ahead of cursor
     // directly manupulating the cache key.
     let text_maybe = post.inputs.sources.get(&post.inputs.cursor.file);
-    if let None = text_maybe {
+    if text_maybe.is_none() {
         // Don't handle it there, validation should have caught it
         return (format!("dummy1-{}:{}", post.inputs.cursor.line, post.inputs.cursor.character), "".to_string());
     }
     let rope = Rope::from_str(text_maybe.unwrap());
     let cursor_line_maybe = rope.get_line(post.inputs.cursor.line as usize);
-    if let None = cursor_line_maybe {
+    if cursor_line_maybe.is_none() {
         return (format!("dummy2-{}:{}", post.inputs.cursor.line, post.inputs.cursor.character), "".to_string());
     }
     let mut cursor_line = cursor_line_maybe.unwrap();
@@ -107,7 +107,7 @@ pub fn cache_key_from_post(
     let mut bytes = 0;
     loop {
         let line_maybe = before_iter.next();
-        if let None = line_maybe {
+        if line_maybe.is_none() {
             break;
         }
         let line = line_maybe.unwrap();
@@ -128,7 +128,7 @@ pub fn cache_key_from_post(
     if chars.clone().count() > CACHE_KEY_CHARS {
         key = chars.skip(key.len() - CACHE_KEY_CHARS).collect();
     }
-    return (key, cache_part2_from_post(post));
+    (key, cache_part2_from_post(post))
 }
 
 
@@ -148,7 +148,7 @@ impl Drop for CompletionSaveToCache {
             // Model stopped because of max tokens, there is a continuation, so it's good for cache in the beginning, but don't believe it to the end.
             // For example CODECODECODECOMPLETION| with empty completion is obviously junk as cache.
             // And it's not junk for "stop", it actually saves one model call after accepting each completion.
-            believe_chars = believe_chars.checked_sub(10).unwrap_or(0);
+            believe_chars = believe_chars.saturating_sub(10);
         } else {
             believe_chars += 1;
         }

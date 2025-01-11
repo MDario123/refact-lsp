@@ -149,7 +149,7 @@ async fn do_i_need_to_reload_vecdb(
             endpoint_embeddings_template: caps_locked.endpoint_embeddings_template.clone(),
             endpoint_embeddings_style: caps_locked.endpoint_embeddings_style.clone(),
             splitter_window_size: caps_locked.embedding_n_ctx / 2,
-            vecdb_max_files: vecdb_max_files,
+            vecdb_max_files,
         }
     };
 
@@ -183,7 +183,7 @@ async fn do_i_need_to_reload_vecdb(
     }
     consts.tokenizer = Some(tokenizer_maybe.clone().unwrap());
 
-    return (true, Some(consts));
+    (true, Some(consts))
 }
 
 pub async fn vecdb_background_reload(
@@ -267,7 +267,7 @@ impl VecDb {
     ) -> Vec<JoinHandle<()>> {
         info!("vecdb: start_background_tasks");
         vectorizer_enqueue_dirty_memory(self.vectorizer_service.clone()).await;
-        return vecdb_start_background_tasks(self.vecdb_emb_client.clone(), self.vectorizer_service.clone(), gcx.clone()).await;
+        vecdb_start_background_tasks(self.vecdb_emb_client.clone(), self.vectorizer_service.clone(), gcx.clone()).await
     }
 
     pub async fn vectorizer_enqueue_files(&self, documents: &Vec<String>, process_immediately: bool) {
@@ -379,7 +379,7 @@ pub async fn get_status(vec_db: Arc<AMutex<Option<VecDb>>>) -> Result<Option<Vec
     if vstatus_copy.state == "done" && vstatus_copy.queue_additions {
         vstatus_copy.state = "cooldown".to_string();
     }
-    return Ok(Some(vstatus_copy));
+    Ok(Some(vstatus_copy))
 }
 
 pub async fn memories_select_all(

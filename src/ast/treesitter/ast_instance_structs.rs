@@ -16,7 +16,7 @@ use uuid::Uuid;
 use crate::ast::treesitter::language_id::LanguageId;
 use crate::ast::treesitter::structs::{RangeDef, SymbolType};
 
-#[derive(Eq, Hash, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(Eq, Hash, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TypeDef {
     pub name: Option<String>,
     pub inference_info: Option<String>,
@@ -27,25 +27,11 @@ pub struct TypeDef {
     pub nested_types: Vec<TypeDef>, // for nested types, presented in templates
 }
 
-impl Default for TypeDef {
-    fn default() -> Self {
-        TypeDef {
-            name: None,
-            inference_info: None,
-            inference_info_guid: None,
-            is_pod: false,
-            namespace: String::from(""),
-            guid: None,
-            nested_types: vec![],
-        }
-    }
-}
-
 impl TypeDef {
     pub fn to_string(&self) -> String {
         let mut res = String::from("");
         if let Some(name) = &self.name {
-            res.push_str(&name);
+            res.push_str(name);
         }
         for nested in &self.nested_types {
             res.push_str(&format!("_{}", &nested.to_string()));
@@ -86,7 +72,6 @@ impl TypeDef {
         }
     }
 }
-
 
 #[derive(PartialEq, Debug, Serialize, Deserialize, Clone)]
 pub struct AstSymbolFields {
@@ -238,7 +223,6 @@ impl Default for AstSymbolFields {
     }
 }
 
-
 #[async_trait]
 #[typetag::serde]
 #[dyn_partial_eq]
@@ -251,20 +235,20 @@ pub trait AstSymbolInstance: Debug + Send + Sync + Any {
 
     fn symbol_info_struct(&self) -> SymbolInformation {
         SymbolInformation {
-            guid: self.guid().clone(),
+            guid: *self.guid(),
             name: self.name().to_string(),
-            parent_guid: self.parent_guid().clone().unwrap_or_default(),
-            linked_decl_guid: self.get_linked_decl_guid().clone().unwrap_or_default(),
-            caller_guid: self.get_caller_guid().clone().unwrap_or_default(),
+            parent_guid: (*self.parent_guid()).unwrap_or_default(),
+            linked_decl_guid: (*self.get_linked_decl_guid()).unwrap_or_default(),
+            caller_guid: (*self.get_caller_guid()).unwrap_or_default(),
             symbol_type: self.symbol_type(),
             symbol_path: "".to_string(),
-            language: self.language().clone(),
+            language: *self.language(),
             file_path: self.file_path().clone(),
             namespace: self.namespace().to_string(),
             is_error: self.is_error(),
-            full_range: self.full_range().clone(),
-            declaration_range: self.declaration_range().clone(),
-            definition_range: self.definition_range().clone(),
+            full_range: *self.full_range(),
+            declaration_range: *self.declaration_range(),
+            definition_range: *self.definition_range(),
         }
     }
 
@@ -366,18 +350,15 @@ pub trait AstSymbolInstance: Debug + Send + Sync + Any {
             if guids.contains(&t.guid.unwrap_or_default()) {
                 new_guids.push(None);
             } else {
-                new_guids.push(t.guid.clone());
+                new_guids.push(t.guid);
             }
         }
         self.set_guids_to_types(&new_guids);
 
-        match self.get_linked_decl_guid() {
-            Some(guid) => {
-                if guids.contains(guid) {
-                    self.set_linked_decl_guid(None);
-                }
+        if let Some(guid) = self.get_linked_decl_guid() {
+            if guids.contains(guid) {
+                self.set_linked_decl_guid(None);
             }
-            None => {}
         }
     }
 
@@ -389,27 +370,15 @@ pub trait AstSymbolInstance: Debug + Send + Sync + Any {
 // pub type AstSymbolInstanceRc = Rc<RefCell<Box<dyn AstSymbolInstance>>>;
 pub type AstSymbolInstanceArc = Arc<RwLock<Box<dyn AstSymbolInstance>>>;
 
-
 /*
 StructDeclaration
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct StructDeclaration {
     pub ast_fields: AstSymbolFields,
     pub template_types: Vec<TypeDef>,
     pub inherited_types: Vec<TypeDef>,
 }
-
-impl Default for StructDeclaration {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-            template_types: vec![],
-            inherited_types: vec![],
-        }
-    }
-}
-
 
 #[async_trait]
 #[typetag::serde]
@@ -440,18 +409,18 @@ impl AstSymbolInstance for StructDeclaration {
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         for t in self.inherited_types.iter_mut() {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
         for t in self.template_types.iter_mut() {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
@@ -460,18 +429,18 @@ impl AstSymbolInstance for StructDeclaration {
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         for t in self.inherited_types.iter_mut() {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }
         for t in self.template_types.iter_mut() {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }
@@ -503,23 +472,13 @@ impl AstSymbolInstance for StructDeclaration {
     }
 }
 
-
 /*
 TypeAlias
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TypeAlias {
     pub ast_fields: AstSymbolFields,
     pub types: Vec<TypeDef>,
-}
-
-impl Default for TypeAlias {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-            types: vec![],
-        }
-    }
 }
 
 #[async_trait]
@@ -547,10 +506,10 @@ impl AstSymbolInstance for TypeAlias {
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         for t in self.types.iter_mut() {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
@@ -559,10 +518,10 @@ impl AstSymbolInstance for TypeAlias {
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         for t in self.types.iter_mut() {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }
@@ -588,23 +547,13 @@ impl AstSymbolInstance for TypeAlias {
     }
 }
 
-
 /*
 ClassFieldDeclaration
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ClassFieldDeclaration {
     pub ast_fields: AstSymbolFields,
     pub type_: TypeDef,
-}
-
-impl Default for ClassFieldDeclaration {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-            type_: TypeDef::default(),
-        }
-    }
 }
 
 #[async_trait]
@@ -629,20 +578,20 @@ impl AstSymbolInstance for ClassFieldDeclaration {
 
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
-        self.type_.guid = guids[idx].clone();
+        self.type_.guid = guids[idx];
         idx += 1;
         self.type_.mutate_nested_types(|t| {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
         })
     }
 
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
-        self.type_.inference_info_guid = guids[idx].clone();
+        self.type_.inference_info_guid = guids[idx];
         idx += 1;
         self.type_.mutate_nested_types(|t| {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
         })
     }
@@ -731,23 +680,13 @@ impl AstSymbolInstance for ImportDeclaration {
     }
 }
 
-
 /*
 VariableDefinition
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct VariableDefinition {
     pub ast_fields: AstSymbolFields,
     pub type_: TypeDef,
-}
-
-impl Default for VariableDefinition {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-            type_: TypeDef::default(),
-        }
-    }
 }
 
 #[async_trait]
@@ -772,20 +711,20 @@ impl AstSymbolInstance for VariableDefinition {
 
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
-        self.type_.guid = guids[idx].clone();
+        self.type_.guid = guids[idx];
         idx += 1;
         self.type_.mutate_nested_types(|t| {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
         })
     }
 
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
-        self.type_.inference_info_guid = guids[idx].clone();
+        self.type_.inference_info_guid = guids[idx];
         idx += 1;
         self.type_.mutate_nested_types(|t| {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
         })
     }
@@ -808,7 +747,6 @@ impl AstSymbolInstance for VariableDefinition {
     }
 }
 
-
 /*
 FunctionDeclaration
 */
@@ -818,38 +756,18 @@ pub struct FunctionCaller {
     pub guid: Option<Uuid>,
 }
 
-#[derive(Eq, Hash, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(Eq, Hash, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct FunctionArg {
     pub name: String,
     pub type_: Option<TypeDef>,
 }
 
-impl Default for FunctionArg {
-    fn default() -> Self {
-        Self {
-            name: String::default(),
-            type_: None,
-        }
-    }
-}
-
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct FunctionDeclaration {
     pub ast_fields: AstSymbolFields,
     pub template_types: Vec<TypeDef>,
     pub args: Vec<FunctionArg>,
     pub return_type: Option<TypeDef>,
-}
-
-impl Default for FunctionDeclaration {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-            template_types: vec![],
-            args: vec![],
-            return_type: None,
-        }
-    }
 }
 
 #[async_trait]
@@ -887,19 +805,19 @@ impl AstSymbolInstance for FunctionDeclaration {
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         if let Some(t) = &mut self.return_type {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
         for t in self.args.iter_mut() {
             if let Some(t) = &mut t.type_ {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
                 t.mutate_nested_types(|t| {
-                    t.guid = guids[idx].clone();
+                    t.guid = guids[idx];
                     idx += 1;
                 })
             }
@@ -909,19 +827,19 @@ impl AstSymbolInstance for FunctionDeclaration {
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         if let Some(t) = &mut self.return_type {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }
         for t in self.args.iter_mut() {
             if let Some(t) = &mut t.type_ {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
                 t.mutate_nested_types(|t| {
-                    t.inference_info_guid = guids[idx].clone();
+                    t.inference_info_guid = guids[idx];
                     idx += 1;
                 })
             }
@@ -952,21 +870,12 @@ impl AstSymbolInstance for FunctionDeclaration {
     }
 }
 
-
 /*
 CommentDefinition
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct CommentDefinition {
     pub ast_fields: AstSymbolFields,
-}
-
-impl Default for CommentDefinition {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-        }
-    }
 }
 
 #[async_trait]
@@ -1003,23 +912,13 @@ impl AstSymbolInstance for CommentDefinition {
     }
 }
 
-
 /*
 FunctionCall
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct FunctionCall {
     pub ast_fields: AstSymbolFields,
     pub template_types: Vec<TypeDef>,
-}
-
-impl Default for FunctionCall {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-            template_types: vec![],
-        }
-    }
 }
 
 #[async_trait]
@@ -1055,18 +954,18 @@ impl AstSymbolInstance for FunctionCall {
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         if let Some(t) = &mut self.ast_fields.linked_decl_type {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
         for t in self.template_types.iter_mut() {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
@@ -1075,18 +974,18 @@ impl AstSymbolInstance for FunctionCall {
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         if let Some(t) = &mut self.ast_fields.linked_decl_type {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }
         for t in self.template_types.iter_mut() {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }
@@ -1114,21 +1013,12 @@ impl AstSymbolInstance for FunctionCall {
     }
 }
 
-
 /*
 VariableUsage
 */
-#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone)]
+#[derive(DynPartialEq, PartialEq, Debug, Serialize, Deserialize, Clone, Default)]
 pub struct VariableUsage {
     pub ast_fields: AstSymbolFields,
-}
-
-impl Default for VariableUsage {
-    fn default() -> Self {
-        Self {
-            ast_fields: AstSymbolFields::default(),
-        }
-    }
 }
 
 #[async_trait]
@@ -1160,10 +1050,10 @@ impl AstSymbolInstance for VariableUsage {
     fn set_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         if let Some(t) = &mut self.ast_fields.linked_decl_type {
-            t.guid = guids[idx].clone();
+            t.guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.guid = guids[idx].clone();
+                t.guid = guids[idx];
                 idx += 1;
             })
         }
@@ -1172,10 +1062,10 @@ impl AstSymbolInstance for VariableUsage {
     fn set_inference_info_guids_to_types(&mut self, guids: &Vec<Option<Uuid>>) {
         let mut idx = 0;
         if let Some(t) = &mut self.ast_fields.linked_decl_type {
-            t.inference_info_guid = guids[idx].clone();
+            t.inference_info_guid = guids[idx];
             idx += 1;
             t.mutate_nested_types(|t| {
-                t.inference_info_guid = guids[idx].clone();
+                t.inference_info_guid = guids[idx];
                 idx += 1;
             })
         }

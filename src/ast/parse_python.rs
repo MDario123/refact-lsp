@@ -57,7 +57,7 @@ fn py_simple_resolve(cx: &mut ContextPy, path: &Vec<String>, look_for: &String, 
         return AstUsage {
             resolved_as: t,
             targets_for_guesswork: vec![],
-            debug_hint: format!("trivial"),
+            debug_hint: "trivial".to_string(),
             uline,
         };
     }
@@ -71,7 +71,7 @@ fn py_simple_resolve(cx: &mut ContextPy, path: &Vec<String>, look_for: &String, 
             return AstUsage {
                 resolved_as: hypothtical_str,
                 targets_for_guesswork: vec![],
-                debug_hint: format!("go_up"),
+                debug_hint: "go_up".to_string(),
                 uline,
             };
         }
@@ -79,21 +79,21 @@ fn py_simple_resolve(cx: &mut ContextPy, path: &Vec<String>, look_for: &String, 
             return AstUsage {
                 resolved_as: an_alias.clone(),
                 targets_for_guesswork: vec![],
-                debug_hint: format!("alias"),
+                debug_hint: "alias".to_string(),
                 uline,
             };
         }
         current_path.pop();
     }
-    return AstUsage {
+    AstUsage {
         resolved_as: "".to_string(),
         targets_for_guesswork: vec![format!("?::{}", look_for)],
-        debug_hint: format!("go_up_fail"),
+        debug_hint: "go_up_fail".to_string(),
         uline,
-    };
+    }
 }
 
-fn py_add_a_thing<'a>(cx: &mut ContextPy, thing_path: &String, thing_kind: char, type_new: String, node: &Node<'a>) -> (bool, String)
+fn py_add_a_thing(cx: &mut ContextPy, thing_path: &String, thing_kind: char, type_new: String, node: &Node<'_>) -> (bool, String)
 {
     if let Some(thing_exists) = cx.ap.things.get(thing_path) {
         if thing_exists.thing_kind != thing_kind {
@@ -117,7 +117,7 @@ fn py_add_a_thing<'a>(cx: &mut ContextPy, thing_path: &String, thing_kind: char,
         thing_kind,
         type_resolved: type_new.clone(),
     });
-    return (true, type_new);
+    (true, type_new)
 }
 
 fn py_is_public(cx: &ContextPy, path_str: &String) -> bool {
@@ -149,7 +149,7 @@ fn py_import_save<'a>(cx: &mut ContextPy, path: &Vec<String>, dotted_from: Strin
     cx.ap.alias.insert(save_as, p.join("::"));
 }
 
-fn py_import<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>)
+fn py_import(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>)
 {
     let mut dotted_from = String::new();
     let mut just_do_it = false;
@@ -177,7 +177,7 @@ fn py_import<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>)
                         "as" => { },
                         "identifier" => { py_import_save(cx, path, dotted_from.clone(), import_what.clone(), subch_text); },
                         _ => {
-                            let msg = cx.ap.error_report(&child, format!("aliased_import syntax"));
+                            let msg = cx.ap.error_report(&child, "aliased_import syntax".to_string());
                             debug!(cx, "{}", msg);
                         },
                     }
@@ -185,14 +185,14 @@ fn py_import<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>)
             },
             "," => {},
             _ => {
-                let msg = cx.ap.error_report(&child, format!("import syntax"));
+                let msg = cx.ap.error_report(&child, "import syntax".to_string());
                 debug!(cx, "{}", msg);
             }
         }
     }
 }
 
-fn py_resolve_dotted_creating_usages<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>, allow_creation: bool) -> Option<AstUsage>
+fn py_resolve_dotted_creating_usages(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>, allow_creation: bool) -> Option<AstUsage>
 {
     let node_text = cx.ap.code[node.byte_range()].to_string();
     // debug!(cx, "DOTTED {}", cx.ap.recursive_print_with_red_brackets(&node));
@@ -204,7 +204,7 @@ fn py_resolve_dotted_creating_usages<'a>(cx: &mut ContextPy, node: &Node<'a>, pa
                 return Some(AstUsage {
                     targets_for_guesswork: vec![],
                     resolved_as: format!("{}::{}", path.join("::"), node_text),
-                    debug_hint: format!("local_var_create"),
+                    debug_hint: "local_var_create".to_string(),
                     uline: node.range().start_point.row,
                 });
             }
@@ -222,7 +222,7 @@ fn py_resolve_dotted_creating_usages<'a>(cx: &mut ContextPy, node: &Node<'a>, pa
             let mut u = AstUsage {
                 targets_for_guesswork: vec![],
                 resolved_as: attrib_path.clone(),
-                debug_hint: format!("attr"),
+                debug_hint: "attr".to_string(),
                 uline: attrib.range().start_point.row,
             };
             // debug!(cx, "DOTTED_ATTR {:?}", u);
@@ -232,7 +232,7 @@ fn py_resolve_dotted_creating_usages<'a>(cx: &mut ContextPy, node: &Node<'a>, pa
             }
             if let Some(_existing_object) = cx.ap.things.get(&object_type) {
                 if allow_creation {
-                    u.debug_hint = format!("attr_create");
+                    u.debug_hint = "attr_create".to_string();
                     return Some(u);
                 }
             }
@@ -242,7 +242,7 @@ fn py_resolve_dotted_creating_usages<'a>(cx: &mut ContextPy, node: &Node<'a>, pa
             return Some(u);
         },
         _ => {
-            let msg = cx.ap.error_report(node, format!("py_resolve_dotted_creating_usages syntax"));
+            let msg = cx.ap.error_report(node, "py_resolve_dotted_creating_usages syntax".to_string());
             debug!(cx, "{}", msg);
         }
     }
@@ -264,7 +264,7 @@ fn py_lhs_tuple<'a>(cx: &mut ContextPy, left: &Node<'a>, type_node: Option<Node<
                     },
                     "," | "(" | ")" => { },
                     _ => {
-                        let msg = cx.ap.error_report(&child, format!("py_lhs_tuple list syntax"));
+                        let msg = cx.ap.error_report(&child, "py_lhs_tuple list syntax".to_string());
                         debug!(cx, "{}", msg);
                     }
                 }
@@ -274,14 +274,14 @@ fn py_lhs_tuple<'a>(cx: &mut ContextPy, left: &Node<'a>, type_node: Option<Node<
             lhs_tuple.push((*left, py_type_generic(cx, type_node, path, 0)));
         },
         _ => {
-            let msg = cx.ap.error_report(left, format!("py_lhs_tuple syntax"));
+            let msg = cx.ap.error_report(left, "py_lhs_tuple syntax".to_string());
             debug!(cx, "{}", msg);
         },
     }
     (lhs_tuple, is_list)
 }
 
-fn py_assignment<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>, is_for_loop: bool)
+fn py_assignment(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>, is_for_loop: bool)
 {
     let left_node = node.child_by_field_name("left");
     let right_node = node.child_by_field_name("right");
@@ -303,12 +303,12 @@ fn py_assignment<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>, is
     }
 }
 
-fn py_var_add<'a>(cx: &mut ContextPy, lhs_lvalue: &Node<'a>, lvalue_type: String, rhs_type: String, path: &Vec<String>)
+fn py_var_add(cx: &mut ContextPy, lhs_lvalue: &Node<'_>, lvalue_type: String, rhs_type: String, path: &Vec<String>)
 {
     let lvalue_usage = if let Some(u) = py_resolve_dotted_creating_usages(cx, lhs_lvalue, path, true) {
         u
     } else {
-        let msg = cx.ap.error_report(lhs_lvalue, format!("py_var_add cannot form lvalue"));
+        let msg = cx.ap.error_report(lhs_lvalue, "py_var_add cannot form lvalue".to_string());
         debug!(cx, "{}", msg);
         return;
     };
@@ -317,7 +317,7 @@ fn py_var_add<'a>(cx: &mut ContextPy, lhs_lvalue: &Node<'a>, lvalue_type: String
         lvalue_path = lvalue_usage.resolved_as.clone();
     } else {
         // typical for creating things in a different file, or for example a.b.c = 5 when b doesn't exit
-        let msg = cx.ap.error_report(lhs_lvalue, format!("py_var_add cannot create"));
+        let msg = cx.ap.error_report(lhs_lvalue, "py_var_add cannot create".to_string());
         debug!(cx, "{}", msg);
         return;
     }
@@ -342,15 +342,15 @@ fn py_var_add<'a>(cx: &mut ContextPy, lhs_lvalue: &Node<'a>, lvalue_type: String
     }
 }
 
-fn py_type_generic<'a>(cx: &mut ContextPy, node: Option<Node<'a>>, path: &Vec<String>, level: usize) -> String {
+fn py_type_generic(cx: &mut ContextPy, node: Option<Node<'_>>, path: &Vec<String>, level: usize) -> String {
     if node.is_none() {
-        return format!("?")
+        return "?".to_string()
     }
     // type[generic_type[identifier[List]type_parameter[[type[identifier[Goat]]]]]]]
     // type[generic_type[identifier[List]type_parameter[[type[generic_type[identifier[Optional]type_parameter[[type[identifier[Goat]]]]]]]]
     let node = node.unwrap();
     match node.kind() {
-        "none" => { format!("void") },
+        "none" => { "void".to_string() },
         "type" => { py_type_generic(cx, node.child(0), path, level+1) },
         "identifier" | "attribute" => {
             if let Some(a_type) = py_resolve_dotted_creating_usages(cx, &node, path, false) {
@@ -360,9 +360,9 @@ fn py_type_generic<'a>(cx: &mut ContextPy, node: Option<Node<'a>>, path: &Vec<St
                     return a_type.targets_for_guesswork.first().unwrap().clone();
                 }
             }
-            format!("UNK/id/{}", cx.ap.code[node.byte_range()].to_string())
+            format!("UNK/id/{}", &cx.ap.code[node.byte_range()])
         },
-        "list" => { format!("CALLABLE_ARGLIST") },
+        "list" => { "CALLABLE_ARGLIST".to_string() },
         "generic_type" => {
             let mut inside_type = String::new();
             let mut todo = "";
@@ -383,16 +383,16 @@ fn py_type_generic<'a>(cx: &mut ContextPy, node: Option<Node<'a>>, path: &Vec<St
                 }
             }
             let result = match todo {
-                "give_up" => format!(""),
+                "give_up" => String::new(),
                 "List" => format!("[{}]", inside_type),
                 "Set" => format!("[{}]", inside_type),
                 "Tuple" => format!("({})", inside_type),
-                "Optional" => format!("{}", inside_type),
+                "Optional" => inside_type.to_string(),
                 "Callable" => {
                     if let Some(return_type_only) = inside_type.strip_prefix("CALLABLE_ARGLIST,") {
                         format!("!{}", return_type_only)
                     } else {
-                        format!("!")
+                        "!".to_string()
                     }
                 },
                 "Dict" => {
@@ -417,35 +417,32 @@ fn py_type_generic<'a>(cx: &mut ContextPy, node: Option<Node<'a>>, path: &Vec<St
                     "[" | "]" => "".to_string(),
                     "type" | "identifier" => py_type_generic(cx, Some(child), path, level+1),
                     "," => ",".to_string(),
-                    _ => format!("SOMETHING/{:?}/{}", child.kind(), cx.ap.code[child.byte_range()].to_string())
+                    _ => format!("SOMETHING/{:?}/{}", child.kind(), &cx.ap.code[child.byte_range()])
                 }.as_str());
             }
             comma_sep_types
         }
         _ => {
-            let msg = cx.ap.error_report(&node, format!("py_type_generic syntax"));
+            let msg = cx.ap.error_report(&node, "py_type_generic syntax".to_string());
             debug!(cx, "{}", msg);
-            format!("UNK/{:?}/{}", node.kind(), cx.ap.code[node.byte_range()].to_string())
+            format!("UNK/{:?}/{}", node.kind(), &cx.ap.code[node.byte_range()])
         }
     }
 }
 
-fn py_string<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) -> String
+fn py_string(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>) -> String
 {
     for i in 0..node.child_count() {
         let child = node.child(i).unwrap();
         // debug!(cx, "  string child[{}] {}", i, cx.ap.recursive_print_with_red_brackets(&child));
-        match child.kind() {
-            "interpolation" => {
-                let _ = py_type_of_expr_creating_usages(cx, child.child_by_field_name("expression"), path);
-            },
-            _ => { },
+        if child.kind() == "interpolation" {
+            let _ = py_type_of_expr_creating_usages(cx, child.child_by_field_name("expression"), path);
         }
     }
     "str".to_string()
 }
 
-fn py_type_of_expr_creating_usages<'a>(cx: &mut ContextPy, node: Option<Node<'a>>, path: &Vec<String>) -> String
+fn py_type_of_expr_creating_usages(cx: &mut ContextPy, node: Option<Node<'_>>, path: &Vec<String>) -> String
 {
     if node.is_none() {
         return "".to_string();
@@ -511,8 +508,8 @@ fn py_type_of_expr_creating_usages<'a>(cx: &mut ContextPy, node: Option<Node<'a>
             let fname = node.child_by_field_name("function").unwrap();
             let ftype = py_type_of_expr_creating_usages(cx, Some(fname), path);
             let arg_types = py_type_of_expr_creating_usages(cx, node.child_by_field_name("arguments"), path);
-            let ret_type = type_call(ftype.clone(), arg_types.clone());
-            ret_type
+            
+            type_call(ftype.clone(), arg_types.clone())
         },
         "identifier" | "dotted_name" | "attribute" => {
             let dotted_type = if let Some(u) = py_resolve_dotted_creating_usages(cx, &node, path, false) {
@@ -549,12 +546,12 @@ fn py_type_of_expr_creating_usages<'a>(cx: &mut ContextPy, node: Option<Node<'a>
                 let body_type = py_type_of_expr_creating_usages(cx, body, &path_anon);
                 format!("[{}]", body_type)
             } else {
-                format!("ERR/EXPR/list_comprehension/no_for")
+                "ERR/EXPR/list_comprehension/no_for".to_string()
             }
         },
-        "keyword_argument" => { format!("void") },
+        "keyword_argument" => { "void".to_string() },
         _ => {
-            let msg = cx.ap.error_report(&node, format!("py_type_of_expr syntax"));
+            let msg = cx.ap.error_report(&node, "py_type_of_expr syntax".to_string());
             debug!(cx, "{}", msg);
             format!("ERR/EXPR/{:?}/{}", node.kind(), node_text)
         }
@@ -564,7 +561,7 @@ fn py_type_of_expr_creating_usages<'a>(cx: &mut ContextPy, node: Option<Node<'a>
     type_of
 }
 
-fn py_class<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>)
+fn py_class(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>)
 {
     let mut derived_from = vec![];
     let mut class_name = "".to_string();
@@ -602,26 +599,26 @@ fn py_class<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>)
                         },
                         "," | "(" | ")" => continue,
                         _ => {
-                            let msg = cx.ap.error_report(&arg, format!("py_class dfrom syntax"));
+                            let msg = cx.ap.error_report(&arg, "py_class dfrom syntax".to_string());
                             debug!(cx, "{}", msg);
                         }
                     }
                 }
             },
             _ => {
-                let msg = cx.ap.error_report(&child, format!("py_class syntax"));
+                let msg = cx.ap.error_report(&child, "py_class syntax".to_string());
                 debug!(cx, "{}", msg);
             }
         }
     }
 
-    if class_name == "" {
-        let msg = cx.ap.error_report(node, format!("py_class nameless class"));
+    if class_name.is_empty() {
+        let msg = cx.ap.error_report(node, "py_class nameless class".to_string());
         debug!(cx, "{}", msg);
         return;
     }
     if body.is_none() {
-        let msg = cx.ap.error_report(node, format!("py_class bodyless class"));
+        let msg = cx.ap.error_report(node, "py_class bodyless class".to_string());
         debug!(cx, "{}", msg);
         return;
     }
@@ -654,7 +651,7 @@ fn py_class<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>)
 }
 
 
-fn py_function<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) {
+fn py_function(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>) {
     let mut body_line1 = usize::MAX;
     let mut body_line2 = 0;
     let mut func_name = "".to_string();
@@ -675,23 +672,23 @@ fn py_function<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) {
             "type" => returns = Some(child),
             "def" | "->" | ":" => {},
             _ => {
-                let msg = cx.ap.error_report(&child, format!("py_function syntax"));
+                let msg = cx.ap.error_report(&child, "py_function syntax".to_string());
                 debug!(cx, "{}", msg);
             }
         }
     }
-    if func_name == "" {
-        let msg = cx.ap.error_report(node, format!("py_function no name"));
+    if func_name.is_empty() {
+        let msg = cx.ap.error_report(node, "py_function no name".to_string());
         debug!(cx, "{}", msg);
         return;
     }
     if body.is_none() {
-        let msg = cx.ap.error_report(node, format!("py_function no body"));
+        let msg = cx.ap.error_report(node, "py_function no body".to_string());
         debug!(cx, "{}", msg);
         return;
     }
     if params_node.is_none() {
-        let msg = cx.ap.error_report(node, format!("py_function no params"));
+        let msg = cx.ap.error_report(node, "py_function no params".to_string());
         debug!(cx, "{}", msg);
         return;
     }
@@ -729,13 +726,13 @@ fn py_function<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) {
             // "list_splat_pattern" for *args
             // "dictionary_splat_pattern" for **kwargs
             _ => {
-                let msg = cx.ap.error_report(&param_node, format!("py_function parameter syntax"));
+                let msg = cx.ap.error_report(&param_node, "py_function parameter syntax".to_string());
                 debug!(cx, "{}", msg);
                 continue;
             }
         }
         if param_name.is_empty() {
-            let msg = cx.ap.error_report(&param_node, format!("py_function nameless param"));
+            let msg = cx.ap.error_report(&param_node, "py_function nameless param".to_string());
             debug!(cx, "{}", msg);
             continue;
         }
@@ -767,7 +764,7 @@ fn py_function<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) {
     }
 }
 
-fn py_body<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) -> String
+fn py_body(cx: &mut ContextPy, node: &Node<'_>, path: &Vec<String>) -> String
 {
     let mut ret_type = "void".to_string();  // if there's no return clause, then it's None aka void
     debug!(cx, "{}", node.kind());
@@ -796,22 +793,23 @@ fn py_body<'a>(cx: &mut ContextPy, node: &Node<'a>, path: &Vec<String>) -> Strin
             let _cond_type = py_type_of_expr_creating_usages(cx, node.child_by_field_name("condition"), path);
             let _body_type = py_body(cx, &node.child_by_field_name("body").unwrap(), path);
         }
-        "call" | "comparison_operator" => { py_type_of_expr_creating_usages(cx, Some(node.clone()), path); }
+        "call" | "comparison_operator" => { py_type_of_expr_creating_usages(cx, Some(*node), path); }
         _ => {
-            let msg = cx.ap.error_report(node, format!("py_body syntax error"));
+            let msg = cx.ap.error_report(node, "py_body syntax error".to_string());
             debug!(cx, "{}", msg);
         }
     }
     cx.ap.reclevel -= 1;
     debug!(cx, "/{} func_returns={:?}", node.kind(), ret_type);
-    return ret_type;
+    ret_type
 }
 
 fn py_make_cx(code: &str) -> ContextPy
 {
     let mut sitter = Parser::new();
     sitter.set_language(&language()).unwrap();
-    let cx = ContextPy {
+    
+    ContextPy {
         ap: ContextAnyParser {
             sitter,
             reclevel: 0,
@@ -824,8 +822,7 @@ fn py_make_cx(code: &str) -> ContextPy
             alias: IndexMap::new(),
             star_imports: vec![],
         },
-    };
-    cx
+    }
 }
 
 pub fn py_parse(code: &str) -> ContextPy
@@ -858,7 +855,7 @@ pub fn py_parse(code: &str) -> ContextPy
         body_line1: 0,
         body_line2: 0,
     });
-    return cx;
+    cx
 }
 
 

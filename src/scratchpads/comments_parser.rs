@@ -98,7 +98,7 @@ pub fn parse_comments(text: &str, extension: &str) -> Vec<Comment> {
                             i += start_delimiter.len();
                             start_line = line_number;
                             state = ParserState::InMultiLineComment {
-                                end_delimiter: *end_delimiter,
+                                end_delimiter,
                             };
                             found = true;
                             break;
@@ -200,7 +200,7 @@ mod tests {
         assert_eq!(comments[0].text, "// This is a single-line comment\n");
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 1);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
     }
 
     #[test]
@@ -211,7 +211,7 @@ mod tests {
         assert_eq!(comments[0].text, "// Return statement\n");
         assert_eq!(comments[0].start_line, 2);
         assert_eq!(comments[0].end_line, 2);
-        assert_eq!(comments[0].is_inline, true);
+        assert!(comments[0].is_inline);
     }
 
     #[test]
@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(comments[0].text, expected_comment);
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 4);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
     }
 
     #[test]
@@ -235,7 +235,7 @@ mod tests {
         assert_eq!(comments[0].text, expected_comment);
         assert_eq!(comments[0].start_line, 2);
         assert_eq!(comments[0].end_line, 2);
-        assert_eq!(comments[0].is_inline, true);
+        assert!(comments[0].is_inline);
     }
 
     #[test]
@@ -247,17 +247,17 @@ mod tests {
         assert_eq!(comments[0].text, "// First comment\n");
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 1);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
 
         assert_eq!(comments[1].text, "// Inside main\n");
         assert_eq!(comments[1].start_line, 3);
         assert_eq!(comments[1].end_line, 3);
-        assert_eq!(comments[1].is_inline, false);
+        assert!(!comments[1].is_inline);
 
         assert_eq!(comments[2].text, "/* End of file */");
         assert_eq!(comments[2].start_line, 6);
         assert_eq!(comments[2].end_line, 6);
-        assert_eq!(comments[2].is_inline, false);
+        assert!(!comments[2].is_inline);
     }
 
     #[test]
@@ -269,12 +269,12 @@ mod tests {
         assert_eq!(comments[0].text, "# This is a single-line comment\n");
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 1);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
 
         assert_eq!(comments[1].text, "# Inline comment");
         assert_eq!(comments[1].start_line, 3);
         assert_eq!(comments[1].end_line, 3);
-        assert_eq!(comments[1].is_inline, true);
+        assert!(comments[1].is_inline);
     }
 
     #[test]
@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(comments[0].text, expected_comment);
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 4);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
     }
 
     #[test]
@@ -298,7 +298,7 @@ mod tests {
         assert_eq!(comments[0].text, expected_comment);
         assert_eq!(comments[0].start_line, 2);
         assert_eq!(comments[0].end_line, 2);
-        assert_eq!(comments[0].is_inline, true);
+        assert!(comments[0].is_inline);
     }
 
     #[test]
@@ -310,12 +310,12 @@ mod tests {
         assert_eq!(comments[0].text, "# This is a comment\n");
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 1);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
 
         assert_eq!(comments[1].text, "# Inline comment");
         assert_eq!(comments[1].start_line, 2);
         assert_eq!(comments[1].end_line, 2);
-        assert_eq!(comments[1].is_inline, true);
+        assert!(comments[1].is_inline);
     }
 
     #[test]
@@ -327,7 +327,7 @@ mod tests {
         assert_eq!(comments[0].text, "<!-- This is a comment -->");
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 1);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
     }
 
     #[test]
@@ -339,13 +339,13 @@ mod tests {
         assert_eq!(comments[0].text, "-- Single line comment\n");
         assert_eq!(comments[0].start_line, 1);
         assert_eq!(comments[0].end_line, 1);
-        assert_eq!(comments[0].is_inline, false);
+        assert!(!comments[0].is_inline);
 
         let expected_comment = "{- Multi-line\n   comment -}";
         assert_eq!(comments[1].text, expected_comment);
         assert_eq!(comments[1].start_line, 4);
         assert_eq!(comments[1].end_line, 5);
-        assert_eq!(comments[1].is_inline, false);
+        assert!(!comments[1].is_inline);
     }
 
     #[test]

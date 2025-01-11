@@ -11,7 +11,7 @@ pub async fn parse_and_get_error_symbols(
     path: &PathBuf,
     file_text: &String,
 ) -> Result<Vec<SymbolInformation>, String> {
-    let (mut parser, _language) = match get_ast_parser_by_filename(&path) {
+    let (mut parser, _language) = match get_ast_parser_by_filename(path) {
         Ok(x) => x,
         Err(err) => {
             tracing::info!("Error getting parser: {}", err.message);
@@ -19,7 +19,7 @@ pub async fn parse_and_get_error_symbols(
         }
     };
 
-    let symbols: Vec<AstSymbolInstanceArc> = parser.parse(&file_text, path);
+    let symbols: Vec<AstSymbolInstanceArc> = parser.parse(file_text, path);
     let error_symbols: Vec<SymbolInformation> = symbols
         .into_iter()
         .filter_map(|symbol| {

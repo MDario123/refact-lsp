@@ -38,11 +38,8 @@ pub fn on_file_text_changed(
     uri: &String,
     _text: &String
 ) {
-    match tele_robot_human.iter_mut().find(|stat| stat.uri.eq(uri)) {
-        Some(x) => {
-            x.last_changed_ts = chrono::Local::now().timestamp();
-        },
-        None => {}
+    if let Some(x) = tele_robot_human.iter_mut().find(|stat| stat.uri.eq(uri)) {
+        x.last_changed_ts = chrono::Local::now().timestamp();
     }
 }
 
@@ -165,11 +162,8 @@ pub async fn tele_robot_human_compress_to_file(
         let json_dict = serde_json::to_value(rec).unwrap();
         records.push(json_dict);
     }
-    match compress_tele_records_to_file(cx.clone(), records, "robot_human".to_string(), "rh".to_string()).await {
-        Ok(_) => {
-            cx.write().await.telemetry.write().unwrap().tele_robot_human.clear();
-        },
-        Err(_) => {}
+    if let Ok(_) = compress_tele_records_to_file(cx.clone(), records, "robot_human".to_string(), "rh".to_string()).await {
+        cx.write().await.telemetry.write().unwrap().tele_robot_human.clear();
     };
 }
 

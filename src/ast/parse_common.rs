@@ -47,7 +47,7 @@ impl ContextAnyParser {
             "".to_string(),
             line,
             format!("{msg}: {:?} in {node_text}", node.kind()).as_str());
-        return format!("line {}: {msg} {}", line, self.recursive_print_with_red_brackets(node));
+        format!("line {}: {msg} {}", line, self.recursive_print_with_red_brackets(node))
     }
 
     pub fn recursive_print_with_red_brackets(&self, node: &Node) -> String {
@@ -66,10 +66,10 @@ impl ContextAnyParser {
                 for i in 0..node.child_count() {
                     let child = node.child(i).unwrap();
                     let field_name = node.field_name_for_child(i as u32).unwrap_or("");
-                    if field_name != "" && rec == 0 {
+                    if !field_name.is_empty() && rec == 0 {
                         result.push_str(&format!("\x1b[35mfield_name={:?} \x1b[0m", field_name));
                     } else if rec == 0 {
-                        result.push_str(&format!("\x1b[35mnaf\x1b[0m"));
+                        result.push_str("\x1b[35mnaf\x1b[0m");
                     }
                     result.push_str(&self._recursive_print_with_red_brackets_helper(&child, rec + 1));
                 }
@@ -83,7 +83,7 @@ impl ContextAnyParser {
     }
 
     pub fn indent(&self) -> String {
-        return " ".repeat(self.reclevel*4);
+        " ".repeat(self.reclevel*4)
     }
 
     pub fn indented_println(&self, args: std::fmt::Arguments) {
@@ -242,7 +242,7 @@ pub fn type_call(t: String, _arg_types: String) -> String
     if t.starts_with("!") {
         return t[1 ..].to_string();
     }
-    return "?".to_string();
+    "?".to_string()
 }
 
 pub fn type_deindex(t: String) -> String
@@ -256,7 +256,7 @@ pub fn type_deindex(t: String) -> String
         return t[1 .. t.len()-1].to_string();
     }
     // can't do anything for ()
-    return "".to_string();
+    "".to_string()
 }
 
 pub fn type_zerolevel_comma_split(t: &str) -> Vec<String> {
@@ -309,5 +309,5 @@ pub fn type_deindex_n(t: String, n: usize) -> String
             return parts[n].to_string();
         }
     }
-    return "".to_string();
+    "".to_string()
 }

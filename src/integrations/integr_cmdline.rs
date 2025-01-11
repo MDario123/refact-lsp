@@ -190,8 +190,8 @@ pub async fn execute_blocking_command(
             }
         };
 
-        let stdout = output_mini_postprocessing(&cfg.output_filter, &String::from_utf8_lossy(&output.stdout).to_string());
-        let stderr = output_mini_postprocessing(&cfg.output_filter, &String::from_utf8_lossy(&output.stderr).to_string());
+        let stdout = output_mini_postprocessing(&cfg.output_filter, String::from_utf8_lossy(&output.stdout).as_ref());
+        let stderr = output_mini_postprocessing(&cfg.output_filter, String::from_utf8_lossy(&output.stderr).as_ref());
 
         let mut out = format_output(&stdout, &stderr);
         let exit_code = output.status.code().unwrap_or_default();
@@ -287,7 +287,7 @@ impl Tool for ToolCmdline {
         args: &HashMap<String, serde_json::Value>,
     ) -> Result<String, String> {
         let (command, _workdir) = parse_command_args(args, &self.cfg)?;
-        return Ok(command);
+        Ok(command)
     }
 
     fn confirm_deny_rules(&self) -> Option<IntegrationConfirmation> {

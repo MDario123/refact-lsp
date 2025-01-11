@@ -47,7 +47,7 @@ impl FromStr for SymbolType {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        return Ok(match s {
+        Ok(match s {
             "struct_declaration" => SymbolType::StructDeclaration,
             "type_alias" => SymbolType::TypeAlias,
             "class_field_declaration" => SymbolType::ClassFieldDeclaration,
@@ -58,6 +58,6 @@ impl FromStr for SymbolType {
             "function_call" => SymbolType::FunctionCall,
             "variable_usage" => SymbolType::VariableUsage,
             _ => SymbolType::Unknown
-        });
+        })
     }
 }

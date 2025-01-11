@@ -149,7 +149,7 @@ impl Tool for ToolPdb {
         };
 
         let mut command_session_locked = command_session.lock().await;
-        let mut pdb_session = command_session_locked.as_any_mut().downcast_mut::<PdbSession>()
+        let pdb_session = command_session_locked.as_any_mut().downcast_mut::<PdbSession>()
             .ok_or("Failed to downcast to PdbSession")?;
 
         let output = match command_args[0].as_str() {
@@ -163,9 +163,9 @@ impl Tool for ToolPdb {
                     return Err("Argument `n_seconds` in `wait n_seconds` is missing".to_string());
                 }
                 let timeout_seconds = command_args[1].parse::<u64>().map_err(|_| "Argument `n_seconds` in `wait n_seconds` is not a number".to_string())?;
-                interact_with_pdb("", &mut pdb_session, &session_hashmap_key, gcx.clone(), timeout_seconds).await?
+                interact_with_pdb("", pdb_session, &session_hashmap_key, gcx.clone(), timeout_seconds).await?
             }
-            _ => { interact_with_pdb(&command, &mut pdb_session, &session_hashmap_key, gcx.clone(), 10).await? }
+            _ => { interact_with_pdb(&command, pdb_session, &session_hashmap_key, gcx.clone(), 10).await? }
         };
         Ok(tool_answer(output, tool_call_id))
     }
@@ -292,7 +292,7 @@ async fn start_pdb_session(
     let stderr = BufReader::new(process.stderr.take().ok_or("Failed to open stderr for pdb process")?);
     let mut pdb_session = PdbSession {process, stdin, stdout, stderr, last_usage_ts: 0};
 
-    let output = interact_with_pdb("", &mut pdb_session, &session_hashmap_key, gcx.clone(), timeout_seconds).await?;
+    let output = interact_with_pdb("", &mut pdb_session, session_hashmap_key, gcx.clone(), timeout_seconds).await?;
 
     let command_session: Box<dyn IntegrationSession> = Box::new(pdb_session);
     {
@@ -360,7 +360,7 @@ async fn send_command_and_get_output_and_error(
     if !have_the_token {
         let mut timeout_error = format!("Command {} timed out after {} seconds.", input_command, timeout_ms / 1000);
         if ask_for_continuation_if_timeout {
-            timeout_error = timeout_error + " Call pdb tool again with \"wait n_seconds\" command to wait for n seconds for the process to finish, or \"kill\" command to forcedly stop it.";
+            timeout_error += " Call pdb tool again with \"wait n_seconds\" command to wait for n seconds for the process to finish, or \"kill\" command to forcedly stop it.";
             return Err(timeout_error);
         }
         error += &format!("\n{timeout_error}");

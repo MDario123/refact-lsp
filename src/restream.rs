@@ -61,7 +61,7 @@ async fn _get_endpoint_and_stuff_from_model_name(
     if !custom_endpoint_template.is_empty() {
         endpoint_template = custom_endpoint_template;
     }
-    return (
+    (
         api_key,
         endpoint_template,
         endpoint_style,
@@ -108,21 +108,21 @@ pub async fn scratchpad_interaction_not_stream_json(
             &mut save_url,
             bearer.clone(),
             &model_name,
-            &prompt,
+            prompt,
             &client,
             &endpoint_template,
-            &parameters,
+            parameters,
         ).await
     } else {
         crate::forward_to_openai_endpoint::forward_to_openai_style_endpoint(
             &mut save_url,
             bearer.clone(),
             &model_name,
-            &prompt,
+            prompt,
             &client,
             &endpoint_template,
             &endpoint_chat_passthrough,
-            &parameters,  // includes n
+            parameters,  // includes n
         ).await
     }.map_err(|e| {
         tele_storage.write().unwrap().tele_net.push(telemetry_structs::TelemetryNetwork::new(
@@ -164,7 +164,7 @@ pub async fn scratchpad_interaction_not_stream_json(
         scratchpad_result = scratchpad.response_n_choices(choices, finish_reasons);
 
     } else if let Some(oai_choices) = model_says.clone().get("choices") {
-        let choice0 = oai_choices.as_array().unwrap().get(0).unwrap();
+        let choice0 = oai_choices.as_array().unwrap().first().unwrap();
         let finish_reasons = oai_choices.clone().as_array().unwrap().iter().map(
             |x| FinishReason::from_json_val(x.get("finish_reason").unwrap_or(&json!(""))).unwrap_or_else(|err| {
                 tracing::error!("Couldn't parse finish_reason: {err}. Fallback to finish_reason=null");
@@ -241,7 +241,7 @@ pub async fn scratchpad_interaction_not_stream_json(
             format!("scratchpad: {}", problem))
         );
     }
-    return Ok(scratchpad_result.unwrap());
+    Ok(scratchpad_result.unwrap())
 }
 
 pub async fn scratchpad_interaction_not_stream(
@@ -281,7 +281,7 @@ pub async fn scratchpad_interaction_not_stream(
         .header("Content-Type", "application/json")
         .body(Body::from(txt))
         .unwrap();
-    return Ok(response);
+    Ok(response)
 }
 
 pub async fn scratchpad_interaction_stream(
@@ -548,7 +548,7 @@ pub fn try_insert_usage(msg_value: &mut serde_json::Value) -> bool {
         map.insert("usage".to_string(), usage);
         return true;
     }
-    return false;
+    false
 }
 
 fn _push_streaming_json_into_scratchpad(
@@ -572,12 +572,12 @@ fn _push_streaming_json_into_scratchpad(
             FinishReason::None
         });
         if let Some(_delta) = choice0.get("delta") {
-            (value, finish_reason) = match scratch.response_message_streaming(&json, finish_reason.clone()) {
+            (value, finish_reason) = match scratch.response_message_streaming(json, finish_reason) {
                 Ok(res) => Ok(res),
                 Err(err) => {
                     if err == "not implemented" {
                         info!("scratchpad doesn't implement response_message_streaming, passing the original message through");
-                        Ok((json.clone(), finish_reason.clone()))
+                        Ok((json.clone(), finish_reason))
                     } else {
                         Err(err)
                     }
@@ -613,7 +613,7 @@ pub async fn cached_not_stream(
        .header("Content-Type", "application/json")
       .body(Body::from(txt))
       .unwrap();
-    return Ok(response);
+    Ok(response)
 }
 
 pub async fn cached_stream(
@@ -629,5 +629,5 @@ pub async fn cached_stream(
        .header("Content-Type", "application/json")
        .body(Body::wrap_stream(evstream))
        .unwrap();
-    return Ok(response);
+    Ok(response)
 }

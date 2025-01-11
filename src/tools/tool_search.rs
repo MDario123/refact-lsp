@@ -24,7 +24,7 @@ async fn execute_att_search(
 ) -> Result<Vec<ContextFile>, String> {
     let gcx = ccx.lock().await.global_context.clone();
     if scope == "workspace" {
-        return execute_at_search(ccx.clone(), &query, None).await
+        return execute_at_search(ccx.clone(), query, None).await
     }
     let scope_is_dir = scope.ends_with('/') || scope.ends_with('\\');
 
@@ -58,7 +58,7 @@ async fn execute_att_search(
     };
 
     info!("att-search: filter: {:?}", filter);
-    execute_at_search(ccx.clone(), &query, Some(filter)).await
+    execute_at_search(ccx.clone(), query, Some(filter)).await
 }
 
 #[async_trait]
@@ -92,7 +92,7 @@ impl Tool for ToolSearch {
         let mut content = "Records found:\n\n".to_string();
         let mut file_results_to_reqs: HashMap<String, Vec<&ContextFile>> = HashMap::new();
         vector_of_context_file.iter().for_each(|rec| {
-            file_results_to_reqs.entry(rec.file_name.clone()).or_insert(vec![]).push(rec)
+            file_results_to_reqs.entry(rec.file_name.clone()).or_default().push(rec)
         });
         let mut used_files: HashSet<String> = HashSet::new();
         for rec in vector_of_context_file.iter().sorted_by(|rec1, rec2| rec2.usefulness.total_cmp(&rec1.usefulness)) {

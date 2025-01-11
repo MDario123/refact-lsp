@@ -56,14 +56,14 @@ pub fn lowlevel_file_markup(
         Arc::new(RefCell::new(s.clone()))
     }).collect();
     let guid_to_symbol: HashMap<Uuid, Arc<RefCell<SymbolInformation>>> = symbols4export.iter().map(
-        |s| (s.borrow().guid.clone(), s.clone())
+        |s| (s.borrow().guid, s.clone())
     ).collect();
     fn recursive_path_of_guid(guid_to_symbol: &HashMap<Uuid, Arc<RefCell<SymbolInformation>>>, guid: &Uuid) -> String
     {
-        return match guid_to_symbol.get(guid) {
+        match guid_to_symbol.get(guid) {
             Some(x) => {
                 let pname = if !x.borrow().name.is_empty() { x.borrow().name.clone() } else { x.borrow().guid.to_string()[..8].to_string() };
-                let pp = recursive_path_of_guid(&guid_to_symbol, &x.borrow().parent_guid);
+                let pp = recursive_path_of_guid(guid_to_symbol, &x.borrow().parent_guid);
                 format!("{}::{}", pp, pname)
             }
             None => {
@@ -71,7 +71,7 @@ pub fn lowlevel_file_markup(
                 // tracing::info!("parent_guid {} not found, maybe outside of this file", guid);
                 "UNK".to_string()
             }
-        };
+        }
     }
     for s in symbols4export.iter_mut() {
         let symbol_path = recursive_path_of_guid(&guid_to_symbol, &s.borrow().guid);

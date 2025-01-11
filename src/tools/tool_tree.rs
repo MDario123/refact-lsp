@@ -59,12 +59,12 @@ impl Tool for ToolTree {
                 ).await?;
                 let true_path = crate::files_correction::to_pathbuf_normalize(&candidate);
 
-                let is_within_project_dirs = project_dirs.iter().any(|p| true_path.starts_with(&p));
+                let is_within_project_dirs = project_dirs.iter().any(|p| true_path.starts_with(p));
                 if !is_within_project_dirs && !gcx.read().await.cmdline.inside_container {
                     return Err(format!("Cannot execute tree(), '{path}' is not within the project directories."));
                 }
 
-                let paths_in_dir = ls_files(&true_path, true).unwrap_or(vec![]);
+                let paths_in_dir = ls_files(&true_path, true).unwrap_or_default();
                 construct_tree_out_of_flat_list_of_paths(&paths_in_dir)
             },
             None => construct_tree_out_of_flat_list_of_paths(&paths_from_anywhere)

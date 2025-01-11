@@ -129,7 +129,7 @@ impl LspBackend {
         let path_string = params.text_document_position.text_document.uri.to_file_path().unwrap_or_default().to_string_lossy().to_string();
         Ok(CodeCompletionPost {
             inputs: CodeCompletionInputs {
-                sources: HashMap::from([(path_string.clone(), (&txt).to_string())]),
+                sources: HashMap::from([(path_string.clone(), txt.to_string())]),
                 cursor: CursorPosition {
                     file: path_string.clone(),
                     line: params.text_document_position.position.line as i32,
@@ -158,12 +158,12 @@ impl LspBackend {
         let mut post = self.flat_params_to_code_completion_post(&params).await?;
 
         let res = handle_v1_code_completion(self.gcx.clone(), &mut post)
-            .await.map_err(|e| internal_error(e))?;
+            .await.map_err(internal_error)?;
 
-        let body_bytes = hyper::body::to_bytes(res.into_body()).await.map_err(|e| internal_error(e))?;
+        let body_bytes = hyper::body::to_bytes(res.into_body()).await.map_err(internal_error)?;
 
-        let s = String::from_utf8(body_bytes.to_vec()).map_err(|e|internal_error(e))?;
-        let value = serde_json::from_str::<CompletionRes>(s.as_str()).map_err(|e| internal_error(e))?;
+        let s = String::from_utf8(body_bytes.to_vec()).map_err(internal_error)?;
+        let value = serde_json::from_str::<CompletionRes>(s.as_str()).map_err(internal_error)?;
 
         Ok(value)
     }
@@ -186,7 +186,7 @@ impl LspBackend {
             (gcx_locked.cmdline.http_port, gcx_locked.http_client.clone())
         };
 
-        let url = "http://127.0.0.1:".to_string() + &port.to_string() + &"/v1/ping".to_string();
+        let url = "http://127.0.0.1:".to_string() + &port.to_string() + "/v1/ping";
         let mut attempts = 0;
         while attempts < 15 {
             let response = http_client.get(&url).send().await;
@@ -225,8 +225,8 @@ impl LanguageServer for LspBackend {
             self.gcx.clone(),
         ).await;
 
-        let completion_options: CompletionOptions;
-        completion_options = CompletionOptions {
+        
+        let completion_options: CompletionOptions = CompletionOptions {
             resolve_provider: Some(false),
             trigger_characters: Some(vec![".(".to_owned()]),
             all_commit_characters: None,

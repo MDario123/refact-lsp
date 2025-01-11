@@ -197,7 +197,7 @@ mod tests {
             for chunk in chunks.iter() {
                 result.push_str(&format!("\n\n------- {:?} {}-{} -------\n", chunk.symbol_path, chunk.start_line, chunk.end_line));
                 result.push_str(&chunk.window_text);
-                result.push_str("\n");
+                result.push('\n');
                 let mut start_pos = 0;
                 while let Some(found_pos) = orig[start_pos..].find(&chunk.window_text) {
                     let i = start_pos + found_pos;

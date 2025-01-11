@@ -138,9 +138,9 @@ fn split_preserving_quotes(s: &str) -> Vec<String> {
     let mut result = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
-    let mut chars = s.chars().peekable();
+    let chars = s.chars().peekable();
 
-    while let Some(c) = chars.next() {
+    for c in chars {
         match c {
             '"' => {
                 if in_quotes {
@@ -178,13 +178,13 @@ async fn parse_tickets(gcx: Arc<ARwLock<GlobalContext>>, content: &str, message_
     async fn process_ticket(gcx: Arc<ARwLock<GlobalContext>>, lines: &[&str], line_num: usize, message_idx: usize) -> Result<(usize, TicketToApply), String> {
         let mut ticket = TicketToApply::default();
         let header = if let Some(idx) = lines[line_num].find("📍") {
-            split_preserving_quotes(&lines[line_num][idx..].trim())
+            split_preserving_quotes(lines[line_num][idx..].trim())
         } else {
             return Err("failed to parse ticket, 📍 is missing".to_string());
         };
 
         ticket.message_idx = message_idx;
-        ticket.action = match header.get(0) {
+        ticket.action = match header.first() {
             Some(action) => {
                 match PatchAction::from_string(action) {
                     Ok(a) => a,
@@ -213,12 +213,9 @@ async fn parse_tickets(gcx: Arc<ARwLock<GlobalContext>>, content: &str, message_
 
         if let Some(el4) = header.get(4) {
             let locate_symbol_str = el4.to_string();
-            match does_doc_have_symbol(gcx.clone(), &locate_symbol_str, &ticket.filename_before).await {
-                Ok((symbol, all_symbols)) => {
-                    ticket.locate_symbol = Some(symbol);
-                    ticket.all_symbols = all_symbols;
-                }
-                Err(_) => {}
+            if let Ok((symbol, all_symbols)) = does_doc_have_symbol(gcx.clone(), &locate_symbol_str, &ticket.filename_before).await {
+                ticket.locate_symbol = Some(symbol);
+                ticket.all_symbols = all_symbols;
             }
         }
 

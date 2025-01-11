@@ -94,7 +94,7 @@ pub fn first_n_chars(msg: &String, n: usize) -> String {
     if last_n_chars.len() == n {
         last_n_chars.push_str("...");
     }
-    return last_n_chars.replace("\n", "\\n");
+    last_n_chars.replace("\n", "\\n")
 }
 
 pub fn last_n_chars(msg: &String, n: usize) -> String {
@@ -102,5 +102,5 @@ pub fn last_n_chars(msg: &String, n: usize) -> String {
     if last_n_chars.len() == n {
         last_n_chars.insert_str(0, "...");
     }
-    return last_n_chars.replace("\n", "\\n");
+    last_n_chars.replace("\n", "\\n")
 }

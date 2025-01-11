@@ -46,10 +46,7 @@ pub async fn enqueue_all_docs_from_jsonl(
         }
     }
     #[cfg(feature="vecdb")]
-    match *vec_db_module.lock().await {
-        Some(ref mut db) => db.vectorizer_enqueue_files(&docs, false).await,
-        None => {},
-    };
+    if let Some(ref mut db) = *vec_db_module.lock().await { db.vectorizer_enqueue_files(&docs, false).await };
     #[cfg(not(feature="vecdb"))]
     let _ = vec_db_module;
 }
@@ -69,7 +66,7 @@ async fn parse_jsonl(jsonl_path: &String) -> Result<Vec<PathBuf>, String> {
     }
     let file = File::open(jsonl_path).await.map_err(|_| format!("File not found: {:?}", jsonl_path))?;
     let reader = BufReader::new(file);
-    let base_path = PathBuf::from(jsonl_path).parent().or(Some(Path::new("/"))).unwrap().to_path_buf();
+    let base_path = PathBuf::from(jsonl_path).parent().unwrap_or(Path::new("/")).to_path_buf();
 
     let mut lines = reader.lines();
 

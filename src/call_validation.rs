@@ -62,7 +62,7 @@ pub fn code_completion_post_validate(code_completion_post: CodeCompletionPost) -
     let Some(source) = code_completion_post.inputs.sources.get(&code_completion_post.inputs.cursor.file) else {
         return Err(ScratchError::new(StatusCode::BAD_REQUEST, "invalid post".to_string()))
     };
-    let text = Rope::from_str(&*source);
+    let text = Rope::from_str(source);
     let line_number = pos.line as usize;
     if line_number >= text.len_lines() {
         return Err(ScratchError::new(StatusCode::BAD_REQUEST, "invalid post".to_string()))
@@ -212,7 +212,9 @@ pub struct ChatMeta {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[allow(non_camel_case_types)]
+#[derive(Default)]
 pub enum ChatMode {
+    #[default]
     NO_TOOLS,
     EXPLORE,
     AGENT,
@@ -220,11 +222,6 @@ pub enum ChatMode {
     PROJECT_SUMMARY,
 }
 
-impl Default for ChatMode {
-    fn default() -> Self {
-        ChatMode::NO_TOOLS
-    }
-}
 
 fn default_true() -> bool {
     true

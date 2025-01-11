@@ -69,22 +69,22 @@ pub async fn handle_v1_code_completion(
     let caps = crate::global_context::try_load_caps_quickly_if_not_present(gcx.clone(), 0).await?;
     let maybe = _lookup_code_completion_scratchpad(
         caps.clone(),
-        &code_completion_post,
+        code_completion_post,
         code_completion_post.inputs.multiline
     ).await;
     if maybe.is_err() {
         // On error, this will also invalidate caps each 10 seconds, allows to overcome empty caps situation
         let _ = crate::global_context::try_load_caps_quickly_if_not_present(gcx.clone(), 10).await;
-        return Err(ScratchError::new(StatusCode::BAD_REQUEST, format!("{}", maybe.unwrap_err())))
+        return Err(ScratchError::new(StatusCode::BAD_REQUEST, maybe.unwrap_err().to_string()))
     }
     let (model_name, scratchpad_name, scratchpad_patch, n_ctx) = maybe.unwrap();
     if code_completion_post.parameters.max_new_tokens == 0 {
         code_completion_post.parameters.max_new_tokens = 50;
     }
-    if code_completion_post.model == "" {
+    if code_completion_post.model.is_empty() {
         code_completion_post.model = model_name.clone();
     }
-    if code_completion_post.scratchpad == "" {
+    if code_completion_post.scratchpad.is_empty() {
         code_completion_post.scratchpad = scratchpad_name.clone();
     }
     info!("chosen completion model: {}, scratchpad: {}", code_completion_post.model, code_completion_post.scratchpad);
@@ -94,7 +94,7 @@ pub async fn handle_v1_code_completion(
         (gcx_locked.completions_cache.clone(), gcx_locked.telemetry.clone())
     };
     if !code_completion_post.no_cache {
-        let cache_key = completion_cache::cache_key_from_post(&code_completion_post);
+        let cache_key = completion_cache::cache_key_from_post(code_completion_post);
         let cached_maybe = completion_cache::cache_get(cache_arc.clone(), cache_key.clone());
         if let Some(cached_json_value) = cached_maybe {
             // info!("cache hit for key {:?}", cache_key.clone());
@@ -163,7 +163,7 @@ pub async fn handle_v1_code_completion_prompt(
     let caps = crate::global_context::try_load_caps_quickly_if_not_present(gcx.clone(), 0).await?;
     let maybe = _lookup_code_completion_scratchpad(caps.clone(), &post, post.inputs.multiline).await;
     if maybe.is_err() {
-        return Err(ScratchError::new(StatusCode::BAD_REQUEST, format!("{}", maybe.unwrap_err())))
+        return Err(ScratchError::new(StatusCode::BAD_REQUEST, maybe.unwrap_err().to_string()))
     }
     let (model_name, scratchpad_name, scratchpad_patch, n_ctx) = maybe.unwrap();
 
@@ -207,5 +207,5 @@ pub async fn handle_v1_code_completion_prompt(
         .header("Content-Type", "application/json")
         .body(Body::from(body))
         .unwrap();
-    return Ok(response);
+    Ok(response)
 }

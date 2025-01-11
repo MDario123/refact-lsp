@@ -45,7 +45,7 @@ pub async fn yaml_configs_try_create_all(gcx: Arc<ARwLock<GlobalContext>>) -> St
         }
     }
 
-    results.get(0).cloned().unwrap_or_default()
+    results.first().cloned().unwrap_or_default()
 }
 
 async fn _yaml_file_exists_or_create(
@@ -109,7 +109,7 @@ async fn read_checksums(config_dir: &Path) -> Result<HashMap<String, String>, St
 
 async fn update_checksum(config_dir: &Path, config_name: String, checksum: &str) -> Result<(), String> {
     let checksum_path = config_dir.join(DEFAULT_CHECKSUM_FILE);
-    let mut checksums = read_checksums(&config_dir).await?;
+    let mut checksums = read_checksums(config_dir).await?;
     checksums.insert(config_name.to_string(), checksum.to_string());
     let content = format!(
         "# This file allows to determine whether a config file still has the default text, so we can upgrade it.\n#\n{}",

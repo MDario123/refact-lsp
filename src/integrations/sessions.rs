@@ -50,8 +50,7 @@ pub async fn remove_expired_sessions_background_task(
 pub async fn stop_sessions(gcx: Arc<ARwLock<GlobalContext>>) {
     let sessions = {
         let mut gcx_locked = gcx.write().await;
-        let sessions = gcx_locked.integration_sessions.iter()
-            .map(|(_, session)| Arc::clone(session))
+        let sessions = gcx_locked.integration_sessions.values().map(Arc::clone)
             .collect::<Vec<_>>();
         gcx_locked.integration_sessions.clear();
         sessions

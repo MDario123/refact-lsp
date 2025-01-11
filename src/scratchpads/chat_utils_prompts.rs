@@ -59,7 +59,7 @@ async fn _workspace_info(
     if !workspace_dirs.is_empty() {
         info.push_str(&format!("The current IDE workspace has these project directories:\n{}", workspace_dirs.join("\n")));
     }
-    let detect_vcs_at_option = active_file_path.clone().or_else(|| workspace_dirs.get(0).map(PathBuf::from));
+    let detect_vcs_at_option = active_file_path.clone().or_else(|| workspace_dirs.first().map(PathBuf::from));
     if let Some(detect_vcs_at) = detect_vcs_at_option {
         let vcs_info = get_vcs_info(&detect_vcs_at).await;
         if let Some(active_file) = active_file_path {
@@ -169,7 +169,7 @@ pub async fn prepend_the_right_system_prompt_and_maybe_more_initial_messages(
     if have_system {
         return messages;
     }
-    if messages.len() == 0 {
+    if messages.is_empty() {
         tracing::error!("What's that? Messages list is empty");
         return messages;
     }
@@ -202,7 +202,7 @@ pub async fn prepend_the_right_system_prompt_and_maybe_more_initial_messages(
         ChatMode::CONFIGURE => {
             crate::integrations::config_chat::mix_config_messages(
                 gcx.clone(),
-                &chat_meta,
+                chat_meta,
                 &mut messages,
                 stream_back_to_user,
             ).await;
@@ -210,7 +210,7 @@ pub async fn prepend_the_right_system_prompt_and_maybe_more_initial_messages(
         ChatMode::PROJECT_SUMMARY => {
             crate::integrations::project_summary_chat::mix_project_summary_messages(
                 gcx.clone(),
-                &chat_meta,
+                chat_meta,
                 &mut messages,
                 stream_back_to_user,
             ).await;

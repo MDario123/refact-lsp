@@ -34,10 +34,10 @@ pub async fn start_server(
     if port == 0 {
         return None
     }
-    return Some(tokio::spawn(async move {
+    Some(tokio::spawn(async move {
         let addr = if is_inside_container { ([0, 0, 0, 0], port).into() } else { ([127, 0, 0, 1], port).into() };
         let builder = Server::try_bind(&addr).map_err(|e| {
-            let _ = write!(std::io::stderr(), "PORT_BUSY {}\n", e);
+            let _ = writeln!(std::io::stderr(), "PORT_BUSY {}", e);
             format!("port busy, address {}: {}", addr, e)
         });
         match builder {
@@ -58,7 +58,7 @@ pub async fn start_server(
                 error!("server error: {}", e);
             }
         }
-    }));
+    }))
 }
 
 async fn _make_http_post<T: Serialize>(

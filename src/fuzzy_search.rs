@@ -174,12 +174,10 @@ mod tests {
     #[test]
     fn test_fuzzy_search_speed() {
         // Arrange
-        let workspace_paths = vec![
-            PathBuf::from("home").join("user").join("repo1"),
+        let workspace_paths = [PathBuf::from("home").join("user").join("repo1"),
             PathBuf::from("home").join("user").join("repo2"),
             PathBuf::from("home").join("user").join("repo3"),
-            PathBuf::from("home").join("user").join("repo4"),
-        ];
+            PathBuf::from("home").join("user").join("repo4")];
 
         let mut paths = Vec::new();
         for i in 0..100000 {

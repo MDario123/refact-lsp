@@ -227,17 +227,17 @@ async fn chat_interaction(
     if stream {
         warn!("subchats doesn't support streaming, fallback to non-stream communications");
     }
-    Ok(chat_interaction_non_stream(
+    chat_interaction_non_stream(
         ccx.clone(),
         spad,
         &prompt,
         chat_post,
-    ).await?)
+    ).await
 }
 
 fn update_usage_from_messages(usage: &mut ChatUsage, messages: &Vec<Vec<ChatMessage>>) {
     // even if n_choices > 1, usage is identical in each Vec<ChatMessage>, so we could take the first one
-    if let Some(message_0) = messages.get(0) {
+    if let Some(message_0) = messages.first() {
         if let Some(last_message) = message_0.last() {
             if let Some(u) = last_message.usage.as_ref() {
                 usage.total_tokens += u.total_tokens;

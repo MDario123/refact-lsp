@@ -13,7 +13,7 @@ pub(crate) fn get_children_guids(parent_guid: &Uuid, children: &Vec<AstSymbolIns
         let child_ref = child.read();
         if let Some(child_guid) = child_ref.parent_guid() {
             if child_guid == parent_guid {
-                result.push(child_ref.guid().clone());
+                result.push(*child_ref.guid());
             }
         }
     }

@@ -3,7 +3,7 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use tree_sitter::Language;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
 pub enum LanguageId {
     Apex,
     Bash,
@@ -38,13 +38,8 @@ pub enum LanguageId {
     TypeScript,
     TypeScriptReact,
     // Vue,
+    #[default]
     Unknown,
-}
-
-impl Default for LanguageId {
-    fn default() -> Self {
-        LanguageId::Unknown
-    }
 }
 
 impl fmt::Display for LanguageId {

@@ -27,7 +27,7 @@ pub trait SkeletonFormatter {
         }
         last.push_str(" {");
         for child in children {
-            let child_symbol = guid_to_info.get(&child).unwrap();
+            let child_symbol = guid_to_info.get(child).unwrap();
             match child_symbol.symbol_type {
                 SymbolType::FunctionDeclaration | SymbolType::ClassFieldDeclaration => {
                     let mut content = child_symbol.get_declaration_content(text).unwrap()
@@ -39,7 +39,7 @@ pub trait SkeletonFormatter {
                         if child_symbol.symbol_type == SymbolType::FunctionDeclaration {
                             last_.push_str(" { ... }");
                         } else if child_symbol.symbol_type == SymbolType::ClassFieldDeclaration {
-                            last_.push_str(",");
+                            last_.push(',');
                         }
                     }
                     for content in content.iter() {
@@ -64,7 +64,7 @@ pub trait SkeletonFormatter {
             .collect::<Vec<_>>();
         let indent_n = content.iter().map(|x| {
             if x.is_empty() {
-                return usize::MAX;
+                usize::MAX
             } else {
                 x.len() - x.trim_start().len()
             }
@@ -137,15 +137,15 @@ pub trait SkeletonFormatter {
                     last.push_str(" { ... }");
                 }
             }
-            res_line.extend(content.into_iter());
+            res_line.extend(content);
         } else if symbol.symbol_type == SymbolType::FunctionDeclaration {
             let content = symbol.get_content(text).unwrap().split("\n")
                 .map(|x| x.to_string())
                 .collect::<Vec<_>>();
-            res_line.extend(content.into_iter());
+            res_line.extend(content);
             bottom_row = symbol.full_range.end_point.row;
         }
-        let res_line = self.preprocess_content(Vec::from_iter(res_line.into_iter()));
+        let res_line = self.preprocess_content(Vec::from_iter(res_line));
         let declaration = res_line.join("\n");
         (declaration, (top_row, bottom_row))
     }

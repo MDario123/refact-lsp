@@ -32,7 +32,7 @@ impl DeltaDeltaChatStreamer {
         assert!(!self.finished, "already finished");
         let mut json_choices = Vec::<Value>::new();
         for (i, x) in choices.iter().enumerate() {
-            let s = cut_result(&x, &self.stop_list);
+            let s = cut_result(x, &self.stop_list);
             json_choices.push(serde_json::json!({
                 "index": i,
                 "message": {

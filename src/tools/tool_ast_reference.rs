@@ -62,7 +62,7 @@ impl Tool for ToolAstReference {
             const USAGES_LIMIT: usize = 20;
             const DEFS_LIMIT: usize = 5;
 
-            for (_i, def) in defs.iter().take(DEFS_LIMIT).enumerate() {
+            for def in defs.iter().take(DEFS_LIMIT) {
                 let usedin_and_uline = crate::ast::ast_db::usages(ast_index.clone(), def.path(), 100).await;
                 let file_paths = usedin_and_uline.iter().map(|(usedin, _)| usedin.cpath.clone()).collect::<Vec<_>>();
                 let short_file_paths = crate::files_correction::shortify_paths(gcx.clone(), &file_paths).await;
@@ -85,7 +85,7 @@ impl Tool for ToolAstReference {
                     format!(
                         "For {} defined at {}:{}-{} there are {} usages:\n{}\n{}\n",
                         def.path_drop0(),
-                        short_def_file_path.get(0).unwrap_or(&def.path().to_string()),
+                        short_def_file_path.first().unwrap_or(&def.path().to_string()),
                         def.full_line1(),
                         def.full_line2(),
                         usage_count,
@@ -118,7 +118,7 @@ impl Tool for ToolAstReference {
                 messages.push(fuzzy_message);
             }
 
-            let mut result_messages = all_results.into_iter().map(|x| ContextEnum::ContextFile(x)).collect::<Vec<ContextEnum>>();
+            let mut result_messages = all_results.into_iter().map(ContextEnum::ContextFile).collect::<Vec<ContextEnum>>();
             result_messages.push(ContextEnum::ChatMessage(ChatMessage {
                 role: "tool".to_string(),
                 content: ChatContent::SimpleText(messages.join("\n")),

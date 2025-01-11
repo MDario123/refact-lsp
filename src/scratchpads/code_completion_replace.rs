@@ -301,7 +301,7 @@ fn skip_similar_rows(pred_text: &Vec<String>, text_to_remove: &Vec<String>) -> V
                 pred_text_trimmed = pred_text_trimmed[idx + 1..].to_vec();
                 break;
             }
-            if !is_too_simple_to_compare(&to_remove_row)
+            if !is_too_simple_to_compare(to_remove_row)
                 && !to_remove_row.trim().is_empty()
                 && to_remove_row.trim_start() == pred_text_trimmed[idx].trim_start() {
                 pred_text_trimmed = pred_text_trimmed[idx + 1..].to_vec();
@@ -315,7 +315,7 @@ fn skip_similar_rows(pred_text: &Vec<String>, text_to_remove: &Vec<String>) -> V
 fn retrieve_a_comment(source: &String, cpath: &PathBuf, cursor: &CursorPosition) -> Option<String> {
     let mut has_a_comment_right_after_the_cursor: bool = false;
     let comments = parse_comments(
-        &source,
+        source,
         &cpath
             .extension()
             .map(|x| x.to_string_lossy().to_string())
@@ -323,21 +323,20 @@ fn retrieve_a_comment(source: &String, cpath: &PathBuf, cursor: &CursorPosition)
     );
     let initial_comment = comments
         .iter()
-        .map(|x| {
+        .inspect(|x| {
             has_a_comment_right_after_the_cursor |=
                 x.start_line == (cursor.line + 1) as usize && !x.is_inline;
-            x
         })
         .filter(|x| x.end_line == cursor.line as usize && !x.is_inline)
         .cloned()
         .collect::<Vec<_>>();
     if !has_a_comment_right_after_the_cursor {
-        if let Some(c) = initial_comment.get(0) {
+        if let Some(c) = initial_comment.first() {
             let mut comments_to_combine = vec![c];
             for idx in (0..c.end_line - 1).rev() {
                 if let Some(found_c) = comments
                     .iter()
-                    .find(|x| x.end_line == idx as usize && !x.is_inline)
+                    .find(|x| x.end_line == idx && !x.is_inline)
                 {
                     comments_to_combine.push(found_c);
                 } else {
@@ -346,7 +345,7 @@ fn retrieve_a_comment(source: &String, cpath: &PathBuf, cursor: &CursorPosition)
             }
             let mut combined_text: String = "".to_string();
             for c in comments_to_combine.iter().rev() {
-                combined_text += format!("{}", c.text).as_str();
+                combined_text += c.text.to_string().as_str();
             }
             Some(combined_text)
         } else {
@@ -425,7 +424,7 @@ fn process_n_choices(
                         .filter(|(_, x)| **x == cursor_line)
                         .map(|(idx, _)| idx)
                         .collect::<Vec<_>>();
-                    if cursor_matches.len() != 1 { None } else { cursor_matches.get(0).copied() }
+                    if cursor_matches.len() != 1 { None } else { cursor_matches.first().copied() }
                 } else { None };
 
                 if let Some(idx) = cursor_idx_mb {
@@ -562,8 +561,8 @@ impl CodeCompletionReplaceScratchpad {
         ast_service: Option<Arc<AMutex<AstIndexService>>>,
         global_context: Arc<ARwLock<GlobalContext>>,
     ) -> Self {
-        let data4cache = completion_cache::CompletionSaveToCache::new(cache_arc, &post);
-        let data4snippet = snippets_collection::SaveSnippet::new(tele_storage, &post);
+        let data4cache = completion_cache::CompletionSaveToCache::new(cache_arc, post);
+        let data4snippet = snippets_collection::SaveSnippet::new(tele_storage, post);
         CodeCompletionReplaceScratchpad {
             t: HasTokenizerAndEot::new(tokenizer),
             post: post.clone(),
@@ -646,16 +645,16 @@ impl ScratchpadAbstract for CodeCompletionReplaceScratchpad {
             .and_then(|x| x.as_f64())
             .unwrap_or(0.5);
         if !self.token_bos.is_empty() {
-            self.t.assert_one_token(&self.token_bos.as_str())?;
+            self.t.assert_one_token(self.token_bos.as_str())?;
         }
         if !self.token_esc.is_empty() {
-            self.t.assert_one_token(&self.token_esc.as_str())?;
+            self.t.assert_one_token(self.token_esc.as_str())?;
         }
         if !self.t.eot.is_empty() {
-            self.t.assert_one_token(&self.t.eot.as_str())?;
+            self.t.assert_one_token(self.t.eot.as_str())?;
         }
         if !self.t.eos.is_empty() {
-            self.t.assert_one_token(&self.t.eos.as_str())?;
+            self.t.assert_one_token(self.t.eos.as_str())?;
         }
         Ok(())
     }
@@ -714,7 +713,7 @@ impl ScratchpadAbstract for CodeCompletionReplaceScratchpad {
             return Err(format!("not enough tokens for the cursor file: {cursor_file_available_tokens} <= {CURSORFILE_MIN_TOKENS}"));
         }
 
-        let text = Rope::from_str(&*self.cleanup_prompt(&source));
+        let text = Rope::from_str(&self.cleanup_prompt(&source));
         let (file_content, _, (line1, line2)) = prepare_cursor_file(
             &self.t,
             cursor_file_available_tokens,
@@ -852,8 +851,8 @@ impl CodeCompletionReplacePassthroughScratchpad {
         ast_service: Option<Arc<AMutex<AstIndexService>>>,
         global_context: Arc<ARwLock<GlobalContext>>,
     ) -> Self {
-        let data4cache = completion_cache::CompletionSaveToCache::new(cache_arc, &post);
-        let data4snippet = snippets_collection::SaveSnippet::new(tele_storage, &post);
+        let data4cache = completion_cache::CompletionSaveToCache::new(cache_arc, post);
+        let data4snippet = snippets_collection::SaveSnippet::new(tele_storage, post);
         CodeCompletionReplacePassthroughScratchpad {
             t: HasTokenizerAndEot::new(tokenizer),
             post: post.clone(),
@@ -952,7 +951,7 @@ impl ScratchpadAbstract for CodeCompletionReplacePassthroughScratchpad {
             return Err(format!("not enough tokens for the cursor file: {cursor_file_available_tokens} <= {CURSORFILE_MIN_TOKENS}"));
         }
 
-        let text = Rope::from_str(&*source);
+        let text = Rope::from_str(&source);
         let (file_content, _file_content_tokens_count, (line1, line2)) = prepare_cursor_file(
             &self.t,
             cursor_file_available_tokens,

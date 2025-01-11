@@ -652,7 +652,7 @@ async fn chrome_command_exec(
             let log = {
                 let mut chrome_session_locked = chrome_session.lock().await;
                 let chrome_session = chrome_session_locked.as_any_mut().downcast_mut::<ChromeSession>().ok_or("Failed to downcast to ChromeSession")?;
-                session_open_tab(chrome_session, &args.tab_id, &args.device, &settings_chrome).await?
+                session_open_tab(chrome_session, &args.tab_id, &args.device, settings_chrome).await?
             };
             tool_log.push(log);
         },
@@ -671,16 +671,16 @@ async fn chrome_command_exec(
             }
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     tab_lock.headless_tab.navigate_to(&url).map_err(|e| e.to_string())?;
                     tab_lock.headless_tab.wait_until_navigated().map_err(|e| e.to_string())?;
                     Ok::<(), String>(())
-                } {
+                }; match res {
                     Ok(_) => {
                         format!("navigate_to successful: {}", tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("navigate_to `{}` failed: {}. If you're trying to open a local file, add a file:// prefix.", args.uri, e.to_string())
+                        format!("navigate_to `{}` failed: {}. If you're trying to open a local file, add a file:// prefix.", args.uri, e)
                     },
                 }
             };
@@ -694,16 +694,16 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     let element = tab_lock.headless_tab.find_element(&args.selector).map_err(|e| e.to_string())?;
                     element.scroll_into_view().map_err(|e| e.to_string())?;
                     Ok::<(), String>(())
-                } {
+                }; match res {
                     Ok(_) => {
                         format!("scroll_to `{}` successful: {}.", args.selector, tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("scroll_to `{}` failed: {}.", args.selector, e.to_string())
+                        format!("scroll_to `{}` failed: {}.", args.selector, e)
                     },
                 }
             };
@@ -725,7 +725,7 @@ async fn chrome_command_exec(
                     },
                     Err(e) => {
                         let tab_lock = tab.lock().await;
-                        format!("Screenshot failed for {}: {}", tab_lock.state_string(), e.to_string())
+                        format!("Screenshot failed for {}: {}", tab_lock.state_string(), e)
                     },
                 }
             };
@@ -739,9 +739,9 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     let elements = tab_lock.headless_tab.find_elements(&args.selector).map_err(|e| e.to_string())?;
-                    if elements.len() == 0 {
+                    if elements.is_empty() {
                         Err("No elements found".to_string())
                     } else {
                         let mut elements_log = vec![];
@@ -752,12 +752,12 @@ async fn chrome_command_exec(
                         }
                         Ok::<String, String>(elements_log.join("\n"))
                     }
-                } {
+                }; match res {
                     Ok(html) => {
                         format!("html of `{}`:\n\n{}", args.selector, html)
                     },
                     Err(e) => {
-                        format!("can't fetch html of `{}`: {}", args.selector, e.to_string())
+                        format!("can't fetch html of `{}`: {}", args.selector, e)
                     },
                 }
             };
@@ -777,7 +777,7 @@ async fn chrome_command_exec(
                         format!("reload of {} successful", tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("reload of {} failed: {}", tab_lock.state_string(), e.to_string())
+                        format!("reload of {} failed: {}", tab_lock.state_string(), e)
                     },
                 }
             };
@@ -791,7 +791,7 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     let mapped_point = Point {
                         x: args.point.x / tab_lock.screenshot_scale_factor,
                         y: args.point.y / tab_lock.screenshot_scale_factor,
@@ -799,12 +799,12 @@ async fn chrome_command_exec(
                     tab_lock.headless_tab.click_point(mapped_point).map_err(|e| e.to_string())?;
                     tab_lock.headless_tab.wait_until_navigated().map_err(|e| e.to_string())?;
                     Ok::<(), String>(())
-                } {
+                }; match res {
                     Ok(_) => {
                         format!("clicked `{} {}` at {}", args.point.x, args.point.y, tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("clicked `{} {}` failed at {}: {}", args.point.x, args.point.y, tab_lock.state_string(), e.to_string())
+                        format!("clicked `{} {}` failed at {}: {}", args.point.x, args.point.y, tab_lock.state_string(), e)
                     },
                 }
             };
@@ -818,16 +818,16 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     let element = tab_lock.headless_tab.find_element(&args.selector).map_err(|e| e.to_string())?;
                     element.click().map_err(|e| e.to_string())?;
                     Ok::<(), String>(())
-                } {
+                }; match res {
                     Ok(_) => {
                         format!("clicked `{}` at {}", args.selector, tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("click at element `{}` failed at {}: {}", args.selector, tab_lock.state_string(), e.to_string())
+                        format!("click at element `{}` failed at {}: {}", args.selector, tab_lock.state_string(), e)
                     },
                 }
             };
@@ -846,7 +846,7 @@ async fn chrome_command_exec(
                         format!("type `{}` at {}", args.text, tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("type text failed at {}: {}", tab_lock.state_string(), e.to_string())
+                        format!("type text failed at {}: {}", tab_lock.state_string(), e)
                     },
                 }
             };
@@ -860,18 +860,18 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     tab_lock.headless_tab.press_key_with_modifiers(
                         args.key.as_str(), args.key_modifiers.as_deref())
                         .map_err(|e| e.to_string())?;
                     tab_lock.headless_tab.wait_until_navigated().map_err(|e| e.to_string())?;
                     Ok::<(), String>(())
-                } {
+                }; match res {
                     Ok(_) => {
                         format!("press_key at {}", tab_lock.state_string())
                     },
                     Err(e) => {
-                        format!("press_key failed at {}: {}", tab_lock.state_string(), e.to_string())
+                        format!("press_key failed at {}: {}", tab_lock.state_string(), e)
                     },
                 }
             };
@@ -915,7 +915,7 @@ async fn chrome_command_exec(
                         format_remote_object(&remote_object)
                     },
                     Err(e) => {
-                        format!("eval failed at {}: {}", tab_lock.state_string(), e.to_string())
+                        format!("eval failed at {}: {}", tab_lock.state_string(), e)
                     },
                 }
             };
@@ -929,7 +929,7 @@ async fn chrome_command_exec(
             };
             let log = {
                 let tab_lock = tab.lock().await;
-                match {
+                let res = {
                     tab_lock.headless_tab.call_method(DOMEnable(None)).map_err(|e| e.to_string())?;
                     tab_lock.headless_tab.call_method(CSSEnable(None)).map_err(|e| e.to_string())?;
                     let element = tab_lock.headless_tab.find_element(&args.selector).map_err(|e| e.to_string())?;
@@ -948,12 +948,12 @@ async fn chrome_command_exec(
                         styles_filtered.push("No properties for given filter.".to_string());
                     }
                     Ok::<String, String>(styles_filtered.join("\n"))
-                } {
+                }; match res {
                     Ok(styles_str) => {
                         format!("Style properties for element `{}` at {}:\n{}", args.selector, tab_lock.state_string(), styles_str)
                     },
                     Err(e) => {
-                        format!("Styles get failed at {}: {}", tab_lock.state_string(), e.to_string())
+                        format!("Styles get failed at {}: {}", tab_lock.state_string(), e)
                     },
                 }
             };
@@ -1050,7 +1050,7 @@ struct WaitForArgs {
 }
 
 fn parse_single_command(command: &String) -> Result<Command, String> {
-    let args = shell_words::split(&command).map_err(|e| e.to_string())?;
+    let args = shell_words::split(command).map_err(|e| e.to_string())?;
     if args.is_empty() {
         return Err("Command is empty".to_string());
     }
@@ -1260,7 +1260,7 @@ fn parse_single_command(command: &String) -> Result<Command, String> {
                 [tab_id, seconds_str] => {
                     let seconds = seconds_str.parse::<f64>().map_err(|e| format!("Failed to parse seconds: {}", e))?;
                     Ok(Command::WaitFor(WaitForArgs {
-                        seconds: seconds.clone(),
+                        seconds,
                         tab_id: tab_id.clone(),
                     }))
                 },

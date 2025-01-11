@@ -93,7 +93,7 @@ pub async fn handle_v1_links(
                 link_text: "Save and return".to_string(),
                 link_goto: Some("NEWCHAT".to_string()),
                 link_summary_path: None,
-                link_tooltip: format!(""),
+                link_tooltip: String::new(),
                 ..Default::default()
             });
         } else if last_message_assistant_without_tools(&post.messages) {
@@ -102,7 +102,7 @@ pub async fn handle_v1_links(
                 link_text: "Looks alright! Please, save the generated summary!".to_string(),
                 link_goto: None,
                 link_summary_path: None,
-                link_tooltip: format!(""),
+                link_tooltip: String::new(),
                 ..Default::default()
             });
         }
@@ -118,7 +118,7 @@ pub async fn handle_v1_links(
                 "In project {}:\n{}{}",
                 commit.get_project_name(),
                 commit.file_changes.iter().take(3).map(|f| format!("{} {}", f.status.initial(), f.path)).collect::<Vec<_>>().join("\n"),
-                if commit.file_changes.len() > 3 { format!("\n...{} files more\n", commit.file_changes.len() - 3) } else { format!("\n") },
+                if commit.file_changes.len() > 3 { format!("\n...{} files more\n", commit.file_changes.len() - 3) } else { "\n".to_string() },
             ));
         }
         if !s.is_empty() {
@@ -158,7 +158,7 @@ pub async fn handle_v1_links(
                 link_text: format!("Configure {failed_integr_name}"),
                 link_goto: Some(format!("SETTINGS:{failed_integr_name}")),
                 link_summary_path: None,
-                link_tooltip: format!(""),
+                link_tooltip: String::new(),
                 ..Default::default()
             })
         }
@@ -186,7 +186,7 @@ pub async fn handle_v1_links(
                 link_text: "Initial project summarization".to_string(),
                 link_goto: None,
                 link_summary_path: summary_path_option,
-                link_tooltip: format!("Project summary is a starting point for Refact Agent."),
+                link_tooltip: "Project summary is a starting point for Refact Agent.".to_string(),
                 ..Default::default()
             });
         } else {
@@ -210,7 +210,7 @@ pub async fn handle_v1_links(
                                                     link_text: format!("Configure {igname}"),
                                                     link_goto: Some(format!("SETTINGS:{igname}")),
                                                     link_summary_path: None,
-                                                    link_tooltip: format!(""),
+                                                    link_tooltip: String::new(),
                                                     ..Default::default()
                                                 });
                                                 any_recommended = true;
@@ -222,10 +222,10 @@ pub async fn handle_v1_links(
                                     if any_recommended {
                                         links.push(Link {
                                             link_action: LinkAction::PostChat,
-                                            link_text: format!("Stop recommending integrations"),
+                                            link_text: "Stop recommending integrations".to_string(),
                                             link_goto: None,
                                             link_summary_path: None,
-                                            link_tooltip: format!(""),
+                                            link_tooltip: String::new(),
                                             link_payload: serde_json::json!({
                                                 "chat_meta": crate::call_validation::ChatMeta {
                                                     chat_id: "".to_string(),
@@ -236,7 +236,7 @@ pub async fn handle_v1_links(
                                                 "messages": [
                                                     crate::call_validation::ChatMessage {
                                                         role: "user".to_string(),
-                                                        content: crate::call_validation::ChatContent::SimpleText(format!("Make recommended_integrations an empty list, follow the system prompt.")),
+                                                        content: crate::call_validation::ChatContent::SimpleText("Make recommended_integrations an empty list, follow the system prompt.".to_string()),
                                                         ..Default::default()
                                                     },
                                                 ]
@@ -270,7 +270,7 @@ pub async fn handle_v1_links(
                     link_text: follow_up_message,
                     link_goto: None,
                     link_summary_path: None,
-                    link_tooltip: format!(""),
+                    link_tooltip: String::new(),
                     ..Default::default()
                 });
             }

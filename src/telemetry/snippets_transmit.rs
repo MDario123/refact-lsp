@@ -48,7 +48,7 @@ pub async fn send_finished_snippets(gcx: Arc<ARwLock<global_context::GlobalConte
 
 pub async fn tele_snip_background_task(
     global_context: Arc<ARwLock<global_context::GlobalContext>>,
-) -> () {
+) {
     loop {
         tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
         send_finished_snippets(global_context.clone()).await;

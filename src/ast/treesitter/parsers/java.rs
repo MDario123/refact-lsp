@@ -239,7 +239,7 @@ impl JavaParser {
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
         decl.ast_fields.is_error = info.ast_fields.is_error;
 
@@ -263,20 +263,17 @@ impl JavaParser {
             for i in 0..node.child_count() {
                 let child = node.child(i).unwrap();
                 symbols.extend(self.find_error_usages(&child, code, &info.ast_fields.file_path, &decl.ast_fields.guid));
-                match child.kind() {
-                    "type_list" => {
-                        for i in 0..child.child_count() {
-                            let child = child.child(i).unwrap();
-                            if let Some(dtype) = parse_type(&child, code) {
-                                decl.inherited_types.push(dtype);
-                            }
+                if child.kind() == "type_list" {
+                    for i in 0..child.child_count() {
+                        let child = child.child(i).unwrap();
+                        if let Some(dtype) = parse_type(&child, code) {
+                            decl.inherited_types.push(dtype);
                         }
                     }
-                    &_ => {}
                 }
             }
         }
-        if let Some(_) = info.node.child_by_field_name("type_parameters") {}
+        info.node.child_by_field_name("type_parameters").is_some();
 
 
         if let Some(body) = info.node.child_by_field_name("body") {
@@ -290,7 +287,7 @@ impl JavaParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             })
         }
 
@@ -313,47 +310,44 @@ impl JavaParser {
         for i in 0..info.node.child_count() {
             let child = info.node.child(i).unwrap();
             symbols.extend(self.find_error_usages(&child, code, &info.ast_fields.file_path, &info.parent_guid));
-            match child.kind() {
-                "variable_declarator" => {
-                    let local_dtype = type_.clone();
-                    let mut decl = VariableDefinition::default();
-                    decl.ast_fields.language = info.ast_fields.language;
-                    decl.ast_fields.full_range = info.node.range();
-                    decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-                    decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
-                    decl.ast_fields.guid = get_guid();
-                    decl.ast_fields.is_error = info.ast_fields.is_error;
-                    decl.type_ = type_.clone();
+            if child.kind() == "variable_declarator" {
+                let local_dtype = type_.clone();
+                let mut decl = VariableDefinition::default();
+                decl.ast_fields.language = info.ast_fields.language;
+                decl.ast_fields.full_range = info.node.range();
+                decl.ast_fields.file_path = info.ast_fields.file_path.clone();
+                decl.ast_fields.parent_guid = Some(info.parent_guid);
+                decl.ast_fields.guid = get_guid();
+                decl.ast_fields.is_error = info.ast_fields.is_error;
+                decl.type_ = type_.clone();
 
-                    if let Some(name) = child.child_by_field_name("name") {
-                        decl.ast_fields.name = code.slice(name.byte_range()).to_string();
-                    }
-                    if let Some(value) = child.child_by_field_name("value") {
-                        symbols.extend(self.find_error_usages(&value, code, &info.ast_fields.file_path, &info.parent_guid));
-                        decl.type_.inference_info = Some(code.slice(value.byte_range()).to_string());
-                        candidates.push_back(CandidateInfo {
-                            ast_fields: decl.ast_fields.clone(),
-                            node: value,
-                            parent_guid: info.parent_guid.clone(),
-                        });
-                    }
-                    if let Some(dimensions) = child.child_by_field_name("dimensions") {
-                        symbols.extend(self.find_error_usages(&dimensions, code, &info.ast_fields.file_path, &info.parent_guid));
-                        decl.type_ = TypeDef {
-                            name: Some(code.slice(dimensions.byte_range()).to_string()),
-                            inference_info: None,
-                            inference_info_guid: None,
-                            is_pod: false,
-                            namespace: "".to_string(),
-                            guid: None,
-                            nested_types: vec![local_dtype],
-                        };
-                    } else {
-                        decl.type_ = local_dtype;
-                    }
-                    symbols.push(Arc::new(RwLock::new(Box::new(decl))));
+                if let Some(name) = child.child_by_field_name("name") {
+                    decl.ast_fields.name = code.slice(name.byte_range()).to_string();
                 }
-                &_ => {}
+                if let Some(value) = child.child_by_field_name("value") {
+                    symbols.extend(self.find_error_usages(&value, code, &info.ast_fields.file_path, &info.parent_guid));
+                    decl.type_.inference_info = Some(code.slice(value.byte_range()).to_string());
+                    candidates.push_back(CandidateInfo {
+                        ast_fields: decl.ast_fields.clone(),
+                        node: value,
+                        parent_guid: info.parent_guid,
+                    });
+                }
+                if let Some(dimensions) = child.child_by_field_name("dimensions") {
+                    symbols.extend(self.find_error_usages(&dimensions, code, &info.ast_fields.file_path, &info.parent_guid));
+                    decl.type_ = TypeDef {
+                        name: Some(code.slice(dimensions.byte_range()).to_string()),
+                        inference_info: None,
+                        inference_info_guid: None,
+                        is_pod: false,
+                        namespace: "".to_string(),
+                        guid: None,
+                        nested_types: vec![local_dtype],
+                    };
+                } else {
+                    decl.type_ = local_dtype;
+                }
+                symbols.push(Arc::new(RwLock::new(Box::new(decl))));
             }
         }
 
@@ -374,47 +368,44 @@ impl JavaParser {
 
         for i in 0..info.node.child_count() {
             let child = info.node.child(i).unwrap();
-            match child.kind() {
-                "variable_declarator" => {
-                    let local_dtype = dtype.clone();
+            if child.kind() == "variable_declarator" {
+                let local_dtype = dtype.clone();
 
-                    let mut decl = ClassFieldDeclaration::default();
-                    decl.ast_fields.language = info.ast_fields.language;
-                    decl.ast_fields.full_range = info.node.range();
-                    decl.ast_fields.declaration_range = info.node.range();
-                    decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-                    decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
-                    decl.ast_fields.guid = get_guid();
-                    decl.ast_fields.is_error = info.ast_fields.is_error;
-                    if let Some(name) = child.child_by_field_name("name") {
-                        decl.ast_fields.name = code.slice(name.byte_range()).to_string();
-                    }
-                    if let Some(value) = child.child_by_field_name("value") {
-                        symbols.extend(self.find_error_usages(&value, code, &info.ast_fields.file_path, &info.parent_guid));
-                        decl.type_.inference_info = Some(code.slice(value.byte_range()).to_string());
-                        candidates.push_back(CandidateInfo {
-                            ast_fields: info.ast_fields.clone(),
-                            node: value,
-                            parent_guid: info.parent_guid.clone(),
-                        });
-                    }
-                    if let Some(dimensions) = child.child_by_field_name("dimensions") {
-                        symbols.extend(self.find_error_usages(&dimensions, code, &info.ast_fields.file_path, &info.parent_guid));
-                        decl.type_ = TypeDef {
-                            name: Some(code.slice(dimensions.byte_range()).to_string()),
-                            inference_info: None,
-                            inference_info_guid: None,
-                            is_pod: false,
-                            namespace: "".to_string(),
-                            guid: None,
-                            nested_types: vec![local_dtype],
-                        };
-                    } else {
-                        decl.type_ = local_dtype;
-                    }
-                    symbols.push(Arc::new(RwLock::new(Box::new(decl))));
+                let mut decl = ClassFieldDeclaration::default();
+                decl.ast_fields.language = info.ast_fields.language;
+                decl.ast_fields.full_range = info.node.range();
+                decl.ast_fields.declaration_range = info.node.range();
+                decl.ast_fields.file_path = info.ast_fields.file_path.clone();
+                decl.ast_fields.parent_guid = Some(info.parent_guid);
+                decl.ast_fields.guid = get_guid();
+                decl.ast_fields.is_error = info.ast_fields.is_error;
+                if let Some(name) = child.child_by_field_name("name") {
+                    decl.ast_fields.name = code.slice(name.byte_range()).to_string();
                 }
-                _ => {}
+                if let Some(value) = child.child_by_field_name("value") {
+                    symbols.extend(self.find_error_usages(&value, code, &info.ast_fields.file_path, &info.parent_guid));
+                    decl.type_.inference_info = Some(code.slice(value.byte_range()).to_string());
+                    candidates.push_back(CandidateInfo {
+                        ast_fields: info.ast_fields.clone(),
+                        node: value,
+                        parent_guid: info.parent_guid,
+                    });
+                }
+                if let Some(dimensions) = child.child_by_field_name("dimensions") {
+                    symbols.extend(self.find_error_usages(&dimensions, code, &info.ast_fields.file_path, &info.parent_guid));
+                    decl.type_ = TypeDef {
+                        name: Some(code.slice(dimensions.byte_range()).to_string()),
+                        inference_info: None,
+                        inference_info_guid: None,
+                        is_pod: false,
+                        namespace: "".to_string(),
+                        guid: None,
+                        nested_types: vec![local_dtype],
+                    };
+                } else {
+                    decl.type_ = local_dtype;
+                }
+                symbols.push(Arc::new(RwLock::new(Box::new(decl))));
             }
         }
         symbols
@@ -427,7 +418,7 @@ impl JavaParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
         decl.ast_fields.is_error = info.ast_fields.is_error;
         symbols.extend(self.find_error_usages(&info.node, code, &info.ast_fields.file_path, &info.parent_guid));
@@ -446,7 +437,7 @@ impl JavaParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: info.ast_fields.clone(),
                     node: child,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
             }
         }
@@ -485,10 +476,10 @@ impl JavaParser {
                 usage.ast_fields.language = info.ast_fields.language;
                 usage.ast_fields.full_range = info.node.range();
                 usage.ast_fields.file_path = info.ast_fields.file_path.clone();
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.guid = get_guid();
                 usage.ast_fields.is_error = info.ast_fields.is_error;
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -502,15 +493,15 @@ impl JavaParser {
                 usage.ast_fields.full_range = info.node.range();
                 usage.ast_fields.file_path = info.ast_fields.file_path.clone();
                 usage.ast_fields.guid = get_guid();
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.caller_guid = Some(get_guid());
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
                 candidates.push_back(CandidateInfo {
                     ast_fields: usage.ast_fields.clone(),
                     node: object,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
             }
@@ -519,7 +510,7 @@ impl JavaParser {
                 def.ast_fields.language = info.ast_fields.language;
                 def.ast_fields.full_range = info.node.range();
                 def.ast_fields.file_path = info.ast_fields.file_path.clone();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 def.ast_fields.is_error = info.ast_fields.is_error;
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
@@ -542,7 +533,7 @@ impl JavaParser {
                     }
                 }
                 def.ast_fields.full_range = info.node.range();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
             }
@@ -555,7 +546,7 @@ impl JavaParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: ast.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -566,7 +557,7 @@ impl JavaParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -599,7 +590,7 @@ impl JavaParser {
                 usage.ast_fields.language = LanguageId::Java;
                 usage.ast_fields.full_range = parent.range();
                 usage.ast_fields.file_path = path.clone();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.guid = get_guid();
                 usage.ast_fields.is_error = true;
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -614,9 +605,9 @@ impl JavaParser {
                 usage.ast_fields.full_range = parent.range();
                 usage.ast_fields.file_path = path.clone();
                 usage.ast_fields.guid = get_guid();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 if let Some(last) = usages.last() {
-                    usage.ast_fields.caller_guid = last.read().fields().parent_guid.clone();
+                    usage.ast_fields.caller_guid = last.read().fields().parent_guid;
                 }
                 symbols.extend(usages);
                 if !JAVA_KEYWORDS.contains(&usage.ast_fields.name.as_str()) {
@@ -642,7 +633,7 @@ impl JavaParser {
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.is_error = info.ast_fields.is_error;
         decl.ast_fields.guid = get_guid();
 
@@ -686,7 +677,7 @@ impl JavaParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body_node,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             });
         } else {
             decl.ast_fields.declaration_range = decl.ast_fields.full_range;
@@ -702,10 +693,10 @@ impl JavaParser {
         decl.ast_fields.language = info.ast_fields.language;
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
         decl.ast_fields.is_error = info.ast_fields.is_error;
-        if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+        if let Some(caller_guid) = info.ast_fields.caller_guid {
             decl.ast_fields.guid = caller_guid;
         }
         decl.ast_fields.caller_guid = Some(get_guid());
@@ -737,7 +728,7 @@ impl JavaParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: new_ast_fields.clone(),
                     node: child,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
             }
         }
@@ -745,7 +736,7 @@ impl JavaParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: object,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
 
@@ -762,7 +753,7 @@ impl JavaParser {
 
         let mut candidates = VecDeque::from(vec![CandidateInfo {
             ast_fields,
-            node: parent.clone(),
+            node: *parent,
             parent_guid: get_guid(),
         }]);
         while let Some(candidate) = candidates.pop_front() {
@@ -770,9 +761,9 @@ impl JavaParser {
             symbols.extend(symbols_l);
         }
         let guid_to_symbol_map = symbols.iter()
-            .map(|s| (s.clone().read().guid().clone(), s.clone())).collect::<HashMap<_, _>>();
+            .map(|s| (*s.clone().read().guid(), s.clone())).collect::<HashMap<_, _>>();
         for symbol in symbols.iter_mut() {
-            let guid = symbol.read().guid().clone();
+            let guid = *symbol.read().guid();
             if let Some(parent_guid) = symbol.read().parent_guid() {
                 if let Some(parent) = guid_to_symbol_map.get(parent_guid) {
                     parent.write().fields_mut().childs_guid.push(guid);
@@ -786,7 +777,7 @@ impl JavaParser {
             sym.fields_mut().childs_guid = sym.fields_mut().childs_guid.iter()
                 .sorted_by_key(|x| {
                     guid_to_symbol_map.get(*x).unwrap().read().full_range().start_byte
-                }).map(|x| x.clone()).collect();
+                }).copied().collect();
         }
 
         symbols

@@ -78,7 +78,7 @@ pub async fn pp_ast_markup_files(
         let path_as_presented = context_file.file_name.clone();
         let candidates = crate::files_correction::correct_to_nearest_filename(gcx.clone(), &path_as_presented, false, 5).await;
         let cpath = match candidates.first() {
-            Some(c) => crate::files_correction::canonical_path(&c),
+            Some(c) => crate::files_correction::canonical_path(c),
             None => crate::files_correction::canonical_path(&path_as_presented)
         };
         context_file.file_name = cpath.to_string_lossy().to_string();
@@ -179,7 +179,7 @@ pub fn colorize_parentof(lines: &mut Vec<FileLine>, long_child_path: &String, bg
     for i in 0..lines.len() {
         if let Some(line) = lines.get_mut(i) {
             let color = &line.color;
-            if long_child_path.starts_with(color) && color.len() > 0 {
+            if long_child_path.starts_with(color) && !color.is_empty() {
                 let plen = line.color.len();
                 let long = long_child_path.len();
                 let mut u = bg + (maxuseful - bg)*(plen as f32)/(long as f32);
@@ -206,7 +206,7 @@ pub fn colorize_minus_one(lines: &mut Vec<FileLine>, line1: usize, line2: usize)
 
 pub fn colorize_comments_up(lines: &mut Vec<FileLine>, settings: &PostprocessSettings) {
     for i in (0 .. lines.len() - 1).rev() {
-        let next_line = lines.get(i+1).map(|x|x.clone());
+        let next_line = lines.get(i+1).cloned();
         let this_line = lines.get_mut(i);
         if this_line.is_none() || next_line.is_none() {
             continue;

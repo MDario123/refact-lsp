@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
@@ -160,15 +159,15 @@ fn load_caps_from_buf(
 ) -> Result<Arc<StdRwLock<CodeAssistantCaps>>, String> {
     let mut r1_mb_error_text = "".to_string();
 
-    let r1_mb: Option<CodeAssistantCaps> = match serde_json::from_str(&buffer) {
+    let r1_mb: Option<CodeAssistantCaps> = match serde_json::from_str(buffer) {
         Ok(v) => v,
         Err(e) => {
             // incorrect json
-            if buffer.trim_start().starts_with(&['{', '[']) {
+            if buffer.trim_start().starts_with(['{', '[']) {
                 r1_mb_error_text = format!("{}", e);
                 None
             } else {
-                match serde_yaml::from_str(&buffer) {
+                match serde_yaml::from_str(buffer) {
                     Ok(v) => v,
                     Err(e) => {
                         r1_mb_error_text = format!("{}", e);
@@ -180,7 +179,7 @@ fn load_caps_from_buf(
     };
     let mut r1 = r1_mb.ok_or(format!("failed to parse caps: {}", r1_mb_error_text))?;
 
-    let r0: ModelsOnly = serde_json::from_str(&KNOWN_MODELS).map_err(|e| {
+    let r0: ModelsOnly = serde_json::from_str(KNOWN_MODELS).map_err(|e| {
         let up_to_line = KNOWN_MODELS.lines().take(e.line()).collect::<Vec<&str>>().join("\n");
         error!("{}\nfailed to parse KNOWN_MODELS: {}", up_to_line, e);
         format!("failed to parse KNOWN_MODELS: {}", e)
@@ -201,15 +200,15 @@ fn load_caps_from_buf(
 
     _inherit_r1_from_r0(&mut r1, &r0);
     apply_models_dict_patch(&mut r1);
-    r1.endpoint_template = relative_to_full_url(&caps_url, &r1.endpoint_template)?;
-    r1.endpoint_chat_passthrough = relative_to_full_url(&caps_url, &r1.endpoint_chat_passthrough)?;
+    r1.endpoint_template = relative_to_full_url(caps_url, &r1.endpoint_template)?;
+    r1.endpoint_chat_passthrough = relative_to_full_url(caps_url, &r1.endpoint_chat_passthrough)?;
     if r1.endpoint_chat_passthrough.is_empty() {
-        r1.endpoint_chat_passthrough = relative_to_full_url(&caps_url, &r1.chat_endpoint)?;
+        r1.endpoint_chat_passthrough = relative_to_full_url(caps_url, &r1.chat_endpoint)?;
     }
-    r1.telemetry_basic_dest = relative_to_full_url(&caps_url, &r1.telemetry_basic_dest)?;
-    r1.telemetry_basic_retrieve_my_own = relative_to_full_url(&caps_url, &r1.telemetry_basic_retrieve_my_own)?;
-    r1.endpoint_embeddings_template = relative_to_full_url(&caps_url, &r1.endpoint_embeddings_template)?;
-    r1.tokenizer_path_template = relative_to_full_url(&caps_url, &r1.tokenizer_path_template)?;
+    r1.telemetry_basic_dest = relative_to_full_url(caps_url, &r1.telemetry_basic_dest)?;
+    r1.telemetry_basic_retrieve_my_own = relative_to_full_url(caps_url, &r1.telemetry_basic_retrieve_my_own)?;
+    r1.endpoint_embeddings_template = relative_to_full_url(caps_url, &r1.endpoint_embeddings_template)?;
+    r1.tokenizer_path_template = relative_to_full_url(caps_url, &r1.tokenizer_path_template)?;
     if r1.embedding_n_ctx == 0 {
         r1.embedding_n_ctx = 512;
     }
@@ -295,7 +294,7 @@ async fn load_caps_buf_from_file(
             let gcx_locked = gcx.read().await;
             gcx_locked.config_dir.clone()
         };
-        let caps_path = PathBuf::from(config_dir).join("bring-your-own-key.yaml");
+        let caps_path = config_dir.join("bring-your-own-key.yaml");
         caps_url = caps_path.to_string_lossy().into_owned();
         // info!("will use {} as the caps file", caps_url);
     }
@@ -315,8 +314,8 @@ async fn load_caps_buf_from_url(
         caps_urls.push("https://inference.smallcloud.ai/coding_assistant_caps.json".to_string());
     } else {
         let base_url = Url::parse(&cmdline.address_url.clone()).map_err(|_| "failed to parse address url (1)".to_string())?;
-        let joined_url = base_url.join(&CAPS_FILENAME).map_err(|_| "failed to parse address url (2)".to_string())?;
-        let joined_url_fallback = base_url.join(&CAPS_FILENAME_FALLBACK).map_err(|_| "failed to parse address url (2)".to_string())?;
+        let joined_url = base_url.join(CAPS_FILENAME).map_err(|_| "failed to parse address url (2)".to_string())?;
+        let joined_url_fallback = base_url.join(CAPS_FILENAME_FALLBACK).map_err(|_| "failed to parse address url (2)".to_string())?;
         caps_urls.push(joined_url.to_string());
         caps_urls.push(joined_url_fallback.to_string());
     }
@@ -358,7 +357,7 @@ async fn load_caps_buf_from_url(
         };
     }
 
-    let caps_url: String = match caps_urls.get(0) {
+    let caps_url: String = match caps_urls.first() {
         Some(u) => u.clone(),
         None => return Err("caps_url is none".to_string())
     };
@@ -465,17 +464,17 @@ pub fn which_model_to_use<'a>(
     default_model: &str,
 ) -> Result<(String, &'a ModelRecord), String> {
     let mut take_this_one = default_model;
-    if user_wants_model != "" {
+    if !user_wants_model.is_empty() {
         take_this_one = user_wants_model;
     }
     if let Some(model_rec) = models.get(&strip_model_from_finetune(&take_this_one.to_string())) {
-        return Ok((take_this_one.to_string(), model_rec));
+        Ok((take_this_one.to_string(), model_rec))
     } else {
-        return Err(format!(
+        Err(format!(
             "Model '{}' not found. Server has these models: {:?}",
             take_this_one,
             models.keys()
-        ));
+        ))
     }
 }
 
@@ -485,10 +484,10 @@ pub fn which_scratchpad_to_use<'a>(
     default_scratchpad: &str,
 ) -> Result<(String, &'a serde_json::Value), String> {
     let mut take_this_one = default_scratchpad;
-    if user_wants_scratchpad != "" {
+    if !user_wants_scratchpad.is_empty() {
         take_this_one = user_wants_scratchpad;
     }
-    if default_scratchpad == "" {
+    if default_scratchpad.is_empty() {
         if scratchpads.len() == 1 {
             let key = scratchpads.keys().next().unwrap();
             return Ok((key.clone(), &scratchpads[key]));
@@ -500,13 +499,13 @@ pub fn which_scratchpad_to_use<'a>(
         }
     }
     if let Some(scratchpad_patch) = scratchpads.get(take_this_one) {
-        return Ok((take_this_one.to_string(), scratchpad_patch));
+        Ok((take_this_one.to_string(), scratchpad_patch))
     } else {
-        return Err(format!(
+        Err(format!(
             "Scratchpad '{}' not found. The model supports these scratchpads: {:?}",
             take_this_one,
             scratchpads.keys()
-        ));
+        ))
     }
 }
 

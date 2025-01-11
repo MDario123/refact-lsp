@@ -254,7 +254,7 @@ async fn ast_indexer_thread(
                 status_locked.astate = "done".to_string();
             }
             ast_sleeping_point.notify_waiters();
-            let _ = write!(std::io::stderr(), "AST COMPLETE\n");
+            let _ = writeln!(std::io::stderr(), "AST COMPLETE");
             info!("AST COMPLETE"); // you can see stderr sometimes faster vs logs
             reported_connect_stats = true;
         }
@@ -333,13 +333,13 @@ pub async fn ast_indexer_start(
             ast_service.clone(),
         )
     );
-    return vec![indexer_handle];
+    vec![indexer_handle]
 }
 
 pub async fn ast_indexer_enqueue_files(ast_service: Arc<AMutex<AstIndexService>>, cpaths: &Vec<String>, wake_up_indexer: bool)
 {
     let ast_status;
-    let nonzero = cpaths.len() > 0;
+    let nonzero = !cpaths.is_empty();
     {
         let mut ast_service_locked = ast_service.lock().await;
         ast_status = ast_service_locked.ast_status.clone();

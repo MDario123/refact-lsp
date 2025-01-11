@@ -56,7 +56,7 @@ pub async fn run_at_commands_locally(
     // - if there's only 1 user message at the bottom, it receives reserve_for_context tokens for context
     // - if there are N user messages, they receive reserve_for_context/N tokens each (and there's no taking from one to give to the other)
     // This is useful to give prefix and suffix of the same file precisely the position necessary for FIM-like operation of a chat model
-    let mut rebuilt_messages: Vec<ChatMessage> = original_messages.iter().take(user_msg_starts).map(|m| m.clone()).collect();
+    let mut rebuilt_messages: Vec<ChatMessage> = original_messages.iter().take(user_msg_starts).cloned().collect();
     for msg_idx in user_msg_starts..original_messages.len() {
         let msg = original_messages[msg_idx].clone();
         let role = msg.role.clone();
@@ -152,7 +152,7 @@ pub async fn run_at_commands_locally(
             info!("postprocess_plain_text_messages + postprocess_context_files {:.3}s", t0.elapsed().as_secs_f32());
         }
 
-        if content.trim().len() > 0 {
+        if !content.trim().is_empty() {
             // stream back to the user, with at-commands replaced
             let msg = ChatMessage::new(role.clone(), content);
             rebuilt_messages.push(msg.clone());
@@ -162,7 +162,7 @@ pub async fn run_at_commands_locally(
 
     ccx.lock().await.pp_skeleton = false;
 
-    return (rebuilt_messages.clone(), user_msg_starts, any_context_produced)
+    (rebuilt_messages.clone(), user_msg_starts, any_context_produced)
 }
 
 pub async fn run_at_commands_remotely(
@@ -215,7 +215,7 @@ pub async fn correct_at_arg(
     if param_lock.is_value_valid(ccx.clone(), &arg.text).await {
         return;
     }
-    let completion = match param_lock.param_completion(ccx.clone(), &arg.text).await.get(0) {
+    let completion = match param_lock.param_completion(ccx.clone(), &arg.text).await.first() {
         Some(x) => x.clone(),
         None => {
             arg.ok = false;
@@ -237,7 +237,7 @@ pub async fn execute_at_commands_in_query(
     let at_commands = {
         ccx.lock().await.at_commands.clone()
     };
-    let at_command_names = at_commands.keys().map(|x|x.clone()).collect::<Vec<_>>();
+    let at_command_names = at_commands.keys().cloned().collect::<Vec<_>>();
     let mut context_enums = vec![];
     let mut highlight_members = vec![];
     let mut clips = vec![];
@@ -249,11 +249,11 @@ pub async fn execute_at_commands_in_query(
             None => { continue; }
         };
         let cmd_lock = cmd.lock().await;
-        let args = words.iter().skip(w_idx + 1).map(|x|x.clone()).collect::<Vec<_>>();
+        let args = words.iter().skip(w_idx + 1).cloned().collect::<Vec<_>>();
 
         let mut cmd_member = AtCommandMember::new("cmd".to_string(), word.clone(), *pos1, *pos2);
         let mut arg_members = vec![];
-        for (text, pos1, pos2) in args.iter().map(|x|x.clone()) {
+        for (text, pos1, pos2) in args.iter().cloned() {
             if at_command_names.contains(&text) { break; }
             // TODO: break if there's \n\n
             arg_members.push(AtCommandMember::new("arg".to_string(), text.clone(), pos1, pos2));
@@ -308,7 +308,7 @@ pub fn parse_words_from_line(line: &String) -> Vec<(String, usize, usize)> {
     let mut results = vec![];
     for cap in word_regex.captures_iter(line) {
         if let Some(matched) = cap.get(1) {
-            let trimmed_match = trim_punctuation(&matched.as_str().to_string());
+            let trimmed_match = trim_punctuation(matched.as_str());
             results.push((trimmed_match.clone(), matched.start(), matched.start() + trimmed_match.len()));
         }
     }

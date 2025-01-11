@@ -194,7 +194,7 @@ pub async fn fill_out_already_applied_status(
                     .unwrap_or(String::from(""))
                 ));
         if !filename.is_empty() {
-            if let Some(file_text_before) = read_file(gcx.clone(), filename.clone()).await.ok() {
+            if let Ok(file_text_before) = read_file(gcx.clone(), filename.clone()).await {
                 r.already_applied = file_text_before.file_content == *file_text_after;
             };
         }

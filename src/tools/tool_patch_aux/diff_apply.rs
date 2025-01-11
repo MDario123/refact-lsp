@@ -30,7 +30,7 @@ async fn write_results_on_disk(
         let path = PathBuf::from(path_str);
         let parent = path.parent().ok_or(format!("Failed to Add: {}. Path is invalid.\nReason: path must have had a parent directory", path_str))?;
         if !parent.exists() {
-            fs::create_dir_all(&parent).map_err(|e| {
+            fs::create_dir_all(parent).map_err(|e| {
                 let err = format!("Failed to Add: {:?}; Its parent dir {:?} did not exist and attempt to create it failed.\nERROR: {}", path, parent, e);
                 warn!("{err}");
                 err
@@ -152,7 +152,7 @@ pub async fn diff_apply(
     correct_and_validate_chunks(gcx.clone(), chunks).await?;
     let (results, outputs) = read_files_n_apply_diff_chunks(
         gcx.clone(),
-        &chunks,
+        chunks,
         &chunks.iter().map(|_| false).collect(),
         &chunks.iter().map(|_| true).collect(),
         MAX_FUZZY_N,

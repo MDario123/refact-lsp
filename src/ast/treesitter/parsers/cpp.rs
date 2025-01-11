@@ -120,7 +120,7 @@ impl CppParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &info.ast_fields.file_path, &decl.ast_fields.guid));
@@ -192,7 +192,7 @@ impl CppParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             })
         }
 
@@ -233,7 +233,7 @@ impl CppParser {
             decl.ast_fields.file_path = info.ast_fields.file_path.clone();
             decl.ast_fields.is_error = info.ast_fields.is_error;
             decl.ast_fields.full_range = info.node.range();
-            decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+            decl.ast_fields.parent_guid = Some(info.parent_guid);
             decl.ast_fields.guid = get_guid();
             decl.type_ = type_.clone();
             decl.ast_fields.name = name_l;
@@ -273,17 +273,17 @@ impl CppParser {
                     if let Some(next) = next_mb {
                         let next_range = next.range();
                         if default_value_range.start_byte > current_range.end_byte && default_value_range.end_byte < next_range.start_byte {
-                            default_value_candidate = Some(default_value.clone());
+                            default_value_candidate = Some(*default_value);
                             break;
                         }
                     } else {
                         if default_value_range.start_byte > current_range.end_byte {
-                            default_value_candidate = Some(default_value.clone());
+                            default_value_candidate = Some(*default_value);
                             break;
                         }
                     }
                 }
-                result.push((current.clone(), default_value_candidate));
+                result.push((*current, default_value_candidate));
             }
             result
         };
@@ -304,7 +304,7 @@ impl CppParser {
             decl.ast_fields.is_error = info.ast_fields.is_error;
             decl.ast_fields.full_range = info.node.range();
             decl.ast_fields.declaration_range = info.node.range();
-            decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+            decl.ast_fields.parent_guid = Some(info.parent_guid);
             decl.ast_fields.guid = get_guid();
             decl.ast_fields.name = name_l;
 
@@ -313,7 +313,7 @@ impl CppParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: info.ast_fields.clone(),
                     node: default_value,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
 
                 decl.type_.inference_info = Some(code.slice(default_value.byte_range()).to_string());
@@ -331,7 +331,7 @@ impl CppParser {
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
         decl.ast_fields.is_error = info.ast_fields.is_error;
         decl.ast_fields.full_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &decl.ast_fields.file_path, &info.parent_guid));
@@ -344,7 +344,7 @@ impl CppParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: info.ast_fields.clone(),
                 node: value,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
         symbols.push(Arc::new(RwLock::new(Box::new(decl))));
@@ -374,18 +374,18 @@ impl CppParser {
             "template_function" | "template_type" => {
                 if let Some(name_node) = parent.child_by_field_name("name") {
                     name = code.slice(name_node.byte_range()).to_string();
-                    symbols.extend(self.find_error_usages(&name_node, code, path, &parent_guid));
+                    symbols.extend(self.find_error_usages(&name_node, code, path, parent_guid));
                 }
                 if let Some(arguments_node) = parent.child_by_field_name("arguments") {
-                    symbols.extend(self.find_error_usages(&arguments_node, code, path, &parent_guid));
-                    self.find_error_usages(&arguments_node, code, path, &parent_guid);
+                    symbols.extend(self.find_error_usages(&arguments_node, code, path, parent_guid));
+                    self.find_error_usages(&arguments_node, code, path, parent_guid);
                     for i in 0..arguments_node.child_count() {
                         let child = arguments_node.child(i).unwrap();
                         #[cfg(test)]
                         #[allow(unused)]
                             let text = code.slice(child.byte_range());
-                        symbols.extend(self.find_error_usages(&child, code, path, &parent_guid));
-                        self.find_error_usages(&child, code, path, &parent_guid);
+                        symbols.extend(self.find_error_usages(&child, code, path, parent_guid));
+                        self.find_error_usages(&child, code, path, parent_guid);
                         if let Some(dtype) = parse_type(&child, code) {
                             types.push(dtype);
                         }
@@ -403,14 +403,14 @@ impl CppParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: AstSymbolFields::from_data(LanguageId::Cpp, path.clone(), is_error),
                         node: value,
-                        parent_guid: parent_guid.clone(),
+                        parent_guid: *parent_guid,
                     });
                     // symbols.extend(self.parse_usages(&value, code, path, parent_guid, is_error));
                 }
             }
             "qualified_identifier" => {
                 if let Some(scope) = parent.child_by_field_name("scope") {
-                    symbols.extend(self.find_error_usages(&scope, code, path, &parent_guid));
+                    symbols.extend(self.find_error_usages(&scope, code, path, parent_guid));
                     let (symbols_l, types_l, name_l, namespace_l) =
                         self.parse_declaration(&scope, code, path, parent_guid, is_error, candidates);
                     symbols.extend(symbols_l);
@@ -421,7 +421,7 @@ impl CppParser {
                         .join("::");
                 }
                 if let Some(name_node) = parent.child_by_field_name("name") {
-                    symbols.extend(self.find_error_usages(&name_node, code, path, &parent_guid));
+                    symbols.extend(self.find_error_usages(&name_node, code, path, parent_guid));
                     let (symbols_l, types_l, name_l, namespace_l) =
                         self.parse_declaration(&name_node, code, path, parent_guid, is_error, candidates);
                     symbols.extend(symbols_l);
@@ -444,7 +444,7 @@ impl CppParser {
             "reference_declarator" => {
                 for i in 0..parent.child_count() {
                     let child = parent.child(i).unwrap();
-                    symbols.extend(self.find_error_usages(&child, code, path, &parent_guid));
+                    symbols.extend(self.find_error_usages(&child, code, path, parent_guid));
                     let (symbols_l, _, name_l, _) =
                         self.parse_declaration(&child, code, path, parent_guid, is_error, candidates);
                     symbols.extend(symbols_l);
@@ -481,7 +481,7 @@ impl CppParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &decl.ast_fields.file_path, &decl.ast_fields.guid));
@@ -534,23 +534,20 @@ impl CppParser {
                     let child = parameters.child(i).unwrap();
                     symbols.extend(self.find_error_usages(&child, code, &decl.ast_fields.file_path,
                                                           &decl.ast_fields.guid));
-                    match child.kind() {
-                        "parameter_declaration" => {
-                            let mut arg = FunctionArg::default();
-                            if let Some(type_) = child.child_by_field_name("type") {
-                                arg.type_ = parse_type(&type_, code);
-                            }
-                            if let Some(declarator) = child.child_by_field_name("declarator") {
-                                let (symbols_l, _, name_l, _) =
-                                    self.parse_declaration(&declarator, code, &decl.ast_fields.file_path,
-                                                           &decl.ast_fields.guid, decl.ast_fields.is_error,
-                                                           candidates);
-                                symbols.extend(symbols_l);
-                                arg.name = name_l;
-                            }
-                            decl.args.push(arg);
+                    if child.kind() == "parameter_declaration" {
+                        let mut arg = FunctionArg::default();
+                        if let Some(type_) = child.child_by_field_name("type") {
+                            arg.type_ = parse_type(&type_, code);
                         }
-                        &_ => {}
+                        if let Some(declarator) = child.child_by_field_name("declarator") {
+                            let (symbols_l, _, name_l, _) =
+                                self.parse_declaration(&declarator, code, &decl.ast_fields.file_path,
+                                                       &decl.ast_fields.guid, decl.ast_fields.is_error,
+                                                       candidates);
+                            symbols.extend(symbols_l);
+                            arg.name = name_l;
+                        }
+                        decl.args.push(arg);
                     }
                 }
 
@@ -566,7 +563,7 @@ impl CppParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body_node,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             });
         }
 
@@ -596,9 +593,9 @@ impl CppParser {
         decl.ast_fields.file_path = info.ast_fields.file_path.clone();
         decl.ast_fields.is_error = info.ast_fields.is_error;
         decl.ast_fields.full_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
-        if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+        if let Some(caller_guid) = info.ast_fields.caller_guid {
             decl.ast_fields.guid = caller_guid;
         }
         decl.ast_fields.caller_guid = Some(get_guid());
@@ -620,7 +617,7 @@ impl CppParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: decl.ast_fields.clone(),
                             node: argument,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         });
                     }
                 }
@@ -628,7 +625,7 @@ impl CppParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: decl.ast_fields.clone(),
                         node: function,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -644,7 +641,7 @@ impl CppParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: new_ast_fields.clone(),
                     node: child,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
             }
         }
@@ -677,7 +674,7 @@ impl CppParser {
                 usage.ast_fields.language = LanguageId::Cpp;
                 usage.ast_fields.full_range = parent.range();
                 usage.ast_fields.file_path = path.clone();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.guid = get_guid();
                 usage.ast_fields.is_error = true;
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -692,7 +689,7 @@ impl CppParser {
                 usage.ast_fields.language = LanguageId::Cpp;
                 usage.ast_fields.file_path = path.clone();
                 usage.ast_fields.guid = get_guid();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 if let Some(argument) = parent.child_by_field_name("argument") {
                     symbols.extend(self.find_error_usages(&argument, code, path, parent_guid));
                 }
@@ -744,9 +741,9 @@ impl CppParser {
                 usage.ast_fields.is_error = info.ast_fields.is_error;
                 usage.ast_fields.name = code.slice(info.node.byte_range()).to_string();
                 usage.ast_fields.full_range = info.node.range();
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -761,16 +758,16 @@ impl CppParser {
                 }
                 usage.ast_fields.full_range = info.node.range();
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.caller_guid = Some(get_guid());
                 if let Some(argument) = info.node.child_by_field_name("argument") {
                     candidates.push_back(CandidateInfo {
                         ast_fields: usage.ast_fields.clone(),
                         node: argument,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                     symbols.extend(self.find_error_usages(&argument, code, &info.ast_fields.file_path, &info.parent_guid));
                 }
@@ -781,14 +778,14 @@ impl CppParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: type_,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
                 if let Some(arguments) = info.node.child_by_field_name("arguments") {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: arguments,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -798,7 +795,7 @@ impl CppParser {
                 def.ast_fields.file_path = info.ast_fields.file_path.clone();
                 def.ast_fields.is_error = info.ast_fields.is_error;
                 def.ast_fields.full_range = info.node.range();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
             }
@@ -811,7 +808,7 @@ impl CppParser {
                             let mut name = code.slice(path.byte_range()).to_string();
                             name = name.slice(1..name.len()-1).to_string();
                             def.path_components = name.split("/").map(|x| x.to_string()).collect();
-                            if SYSTEM_HEADERS.contains(&&name.as_str()) {
+                            if SYSTEM_HEADERS.contains(&name.as_str()) {
                                 def.import_type = ImportType::System;
                             }
 
@@ -820,7 +817,7 @@ impl CppParser {
                     }
                 }
                 def.ast_fields.full_range = info.node.range();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
                 for i in 0..info.node.child_count() {
@@ -828,7 +825,7 @@ impl CppParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -841,7 +838,7 @@ impl CppParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: ast.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -851,7 +848,7 @@ impl CppParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -868,7 +865,7 @@ impl CppParser {
 
         let mut candidates = VecDeque::from(vec![CandidateInfo {
             ast_fields,
-            node: parent.clone(),
+            node: *parent,
             parent_guid: get_guid(),
         }]);
         while let Some(candidate) = candidates.pop_front() {
@@ -876,9 +873,9 @@ impl CppParser {
             symbols.extend(symbols_l);
         }
         let guid_to_symbol_map = symbols.iter()
-            .map(|s| (s.clone().read().guid().clone(), s.clone())).collect::<HashMap<_, _>>();
+            .map(|s| (*s.clone().read().guid(), s.clone())).collect::<HashMap<_, _>>();
         for symbol in symbols.iter_mut() {
-            let guid = symbol.read().guid().clone();
+            let guid = *symbol.read().guid();
             if let Some(parent_guid) = symbol.read().parent_guid() {
                 if let Some(parent) = guid_to_symbol_map.get(parent_guid) {
                     parent.write().fields_mut().childs_guid.push(guid);
@@ -892,7 +889,7 @@ impl CppParser {
             sym.fields_mut().childs_guid = sym.fields_mut().childs_guid.iter()
                 .sorted_by_key(|x| {
                     guid_to_symbol_map.get(*x).unwrap().read().full_range().start_byte
-                }).map(|x| x.clone()).collect();
+                }).copied().collect();
         }
 
         symbols

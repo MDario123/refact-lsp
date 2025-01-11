@@ -29,7 +29,7 @@ pub struct Document {
 
 pub async fn get_file_text_from_memory_or_disk(global_context: Arc<ARwLock<GlobalContext>>, file_path: &PathBuf) -> Result<String, String>
 {
-    check_file_privacy(load_privacy_if_needed(global_context.clone()).await, &file_path, &FilePrivacyLevel::AllowToSendAnywhere)?;
+    check_file_privacy(load_privacy_if_needed(global_context.clone()).await, file_path, &FilePrivacyLevel::AllowToSendAnywhere)?;
 
     if let Some(doc) = global_context.read().await.documents_state.memory_document_map.get(file_path) {
         let doc = doc.read().await;
@@ -37,7 +37,7 @@ pub async fn get_file_text_from_memory_or_disk(global_context: Arc<ARwLock<Globa
             return Ok(doc.doc_text.as_ref().unwrap().to_string());
         }
     }
-    read_file_from_disk_without_privacy_check(&file_path)
+    read_file_from_disk_without_privacy_check(file_path)
         .await.map(|x|x.to_string())
         .map_err(|e|format!("Not found in memory, not found on disk: {}", e))
 }
@@ -52,10 +52,10 @@ impl Document {
         match read_file_from_disk(load_privacy_if_needed(gcx.clone()).await, &self.doc_path).await {
             Ok(res) => {
                 self.doc_text = Some(res);
-                return Ok(());
+                Ok(())
             },
             Err(e) => {
-                return Err(e)
+                Err(e)
             }
         }
     }
@@ -76,7 +76,7 @@ impl Document {
         if let Some(r) = &self.doc_text {
             return Ok(r.to_string());
         }
-        return Err(format!("no text loaded in {}", self.doc_path.display()));
+        Err(format!("no text loaded in {}", self.doc_path.display()))
     }
 
     pub fn does_text_look_good(&self) -> Result<(), String> {
@@ -218,7 +218,7 @@ async fn _run_command(cmd: &str, args: &[&str], path: &PathBuf, filter_out_statu
         .map(|s| s.lines().map(|line| {
             let trimmed = line.trim();
             if filter_out_status && trimmed.len() > 1 {
-                path.join(&trimmed[1..].trim())
+                path.join(trimmed[1..].trim())
             } else {
                 path.join(line)
             }
@@ -338,8 +338,8 @@ async fn _ls_files_under_version_control_recursive(
     let mut candidates: Vec<PathBuf> = vec![path.clone()];
     let mut rejected_reasons: HashMap<String, usize> = HashMap::new();
     let mut blacklisted_dirs_cnt: usize = 0;
-    while !candidates.is_empty() {
-        let local_path = candidates.pop().unwrap();
+    while let Some(local_path) = candidates.pop() {
+        
         if local_path.is_file() {
             let maybe_valid = is_valid_file(
                 &local_path, allow_files_in_hidden_folders, ignore_size_thresholds);
@@ -420,7 +420,7 @@ pub async fn retrieve_files_in_workspace_folders(
 pub fn is_path_to_enqueue_valid(path: &PathBuf) -> Result<(), String> {
     let extension = path.extension().unwrap_or_default();
     if !SOURCE_FILE_EXTENSIONS.contains(&extension.to_str().unwrap_or_default()) {
-        return Err(format!("Unsupported file extension {:?}", extension).into());
+        return Err(format!("Unsupported file extension {:?}", extension));
     }
     Ok(())
 }
@@ -432,7 +432,7 @@ async fn enqueue_some_docs(
 ) {
     info!("detected {} modified/added/removed files", paths.len());
     for d in paths.iter().take(5) {
-        info!("    {}", crate::nicer_logs::last_n_chars(&d, 30));
+        info!("    {}", crate::nicer_logs::last_n_chars(d, 30));
     }
     if paths.len() > 5 {
         info!("    ...");
@@ -443,7 +443,7 @@ async fn enqueue_some_docs(
     };
     #[cfg(feature="vecdb")]
     if let Some(ref mut db) = *vec_db_module.lock().await {
-        db.vectorizer_enqueue_files(&paths, force).await;
+        db.vectorizer_enqueue_files(paths, force).await;
     }
     #[cfg(not(feature="vecdb"))]
     let _ = vec_db_module;
@@ -457,7 +457,7 @@ async fn enqueue_some_docs(
             moar_files.push(PathBuf::from(p.clone()));
         }
     }
-    if moar_files.len() > 0 {
+    if !moar_files.is_empty() {
         info!("this made file cache dirty");
         let dirty_arc = {
             let gcx_locked = gcx.read().await;
@@ -623,10 +623,7 @@ pub async fn on_did_delete(gcx: Arc<ARwLock<GlobalContext>>, path: &PathBuf)
     (*dirty_arc.lock().await) = now;
 
     #[cfg(feature="vecdb")]
-    match *vec_db_module.lock().await {
-        Some(ref mut db) => db.remove_file(path).await,
-        None => {}
-    }
+    if let Some(ref mut db) = *vec_db_module.lock().await { db.remove_file(path).await }
     #[cfg(not(feature="vecdb"))]
     let _ = vec_db_module;
     if let Some(ast) = &ast_service {
@@ -666,7 +663,7 @@ pub async fn file_watcher_event(event: Event, gcx_weak: Weak<ARwLock<GlobalConte
     async fn on_create_modify(gcx_weak: Weak<ARwLock<GlobalContext>>, event: Event) {
         let mut docs = vec![];
         for p in &event.paths {
-            if is_this_inside_blacklisted_dir(&p) {  // important to filter BEFORE canonical_path
+            if is_this_inside_blacklisted_dir(p) {  // important to filter BEFORE canonical_path
                 continue;
             }
 
@@ -696,12 +693,12 @@ pub async fn file_watcher_event(event: Event, gcx_weak: Weak<ARwLock<GlobalConte
     async fn on_remove(gcx_weak: Weak<ARwLock<GlobalContext>>, event: Event) {
         let mut never_mind = true;
         for p in &event.paths {
-            never_mind &= is_this_inside_blacklisted_dir(&p);
+            never_mind &= is_this_inside_blacklisted_dir(p);
         }
         let mut docs = vec![];
         if !never_mind {
             for p in &event.paths {
-                if is_this_inside_blacklisted_dir(&p) {
+                if is_this_inside_blacklisted_dir(p) {
                     continue;
                 }
                 let cpath = crate::files_correction::canonical_path(&p.to_string_lossy().to_string());

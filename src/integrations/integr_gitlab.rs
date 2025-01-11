@@ -95,12 +95,12 @@ impl Tool for ToolGitlab {
         }
         let output = Command::new(&glab_binary_path)
             .args(&command_args)
-            .current_dir(&to_pathbuf_normalize(&project_dir))
+            .current_dir(to_pathbuf_normalize(project_dir))
             .env("GITLAB_TOKEN", &self.settings_gitlab.glab_token)
             .output()
             .await
             .map_err(|e| format!("!{}, {} failed:\n{}",
-                go_to_configuration_message("gitlab"), glab_binary_path, e.to_string()))?;
+                go_to_configuration_message("gitlab"), glab_binary_path, e))?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -175,7 +175,7 @@ fn parse_command_args(args: &HashMap<String, Value>) -> Result<Vec<String>, Stri
         None => return Err("Missing argument `command`".to_string())
     };
 
-    let mut parsed_args = shell_words::split(&command).map_err(|e| e.to_string())?;
+    let mut parsed_args = shell_words::split(command).map_err(|e| e.to_string())?;
     if parsed_args.is_empty() {
         return Err("Parsed command is empty".to_string());
     }

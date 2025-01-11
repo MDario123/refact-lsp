@@ -116,7 +116,7 @@ fn get_file_type(path: &PathBuf) -> String {
     if ["jpg", "JPG", "JPEG"].contains(&extension.as_str()) {
         return "image/jpeg".to_string();
     }
-    return "text".to_string();
+    "text".to_string()
 }
 
 async fn load_image(path: &String, f_type: &String) -> Result<MultimodalElement, String> {
@@ -142,12 +142,12 @@ async fn load_image(path: &String, f_type: &String) -> Result<MultimodalElement,
             f_type = "image/png".to_string();
             let tree = {
                 let mut opt = usvg::Options::default();
-                opt.resources_dir = std::fs::canonicalize(&path)
+                opt.resources_dir = std::fs::canonicalize(path)
                     .ok()
                     .and_then(|p| p.parent().map(|p| p.to_path_buf()));
                 opt.fontdb_mut().load_system_fonts();
 
-                let svg_data = std::fs::read(&path).unwrap();
+                let svg_data = std::fs::read(path).unwrap();
                 usvg::Tree::from_data(&svg_data, &opt).unwrap()
             };
 
@@ -205,7 +205,7 @@ pub async fn paths_and_symbols_to_cat(
                 Ok(f) => f,
                 Err(e) => { not_found_messages.push(e); continue;}
             };
-            let files_in_dir = ls_files(&PathBuf::from(candidate), false).unwrap_or(vec![]);
+            let files_in_dir = ls_files(&PathBuf::from(candidate), false).unwrap_or_default();
             corrected_paths.extend(files_in_dir.into_iter().map(|x|x.to_string_lossy().to_string()));
         }
     }
@@ -221,7 +221,7 @@ pub async fn paths_and_symbols_to_cat(
     if let Some(ast_service) = ast_service_opt {
         let ast_index = ast_service.lock().await.ast_index.clone();
         for p in unique_paths.iter() {
-            let doc_syms = crate::ast::ast_db::doc_defs(ast_index.clone(), &p).await;
+            let doc_syms = crate::ast::ast_db::doc_defs(ast_index.clone(), p).await;
             // s.name() means the last part of the path
             // symbols.contains means exact match in comma-separated list
             let mut syms_def_in_this_file = vec![];

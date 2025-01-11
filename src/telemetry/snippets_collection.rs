@@ -78,7 +78,7 @@ pub fn snippet_register_from_data4cache(
     if data4cache.completion0_finish_reason.is_empty() {
         return;
     }
-    data4cache.completion0_snippet_telemetry_id = Some(snippet_register(&ss, data4cache.completion0_text.clone(), context_used));
+    data4cache.completion0_snippet_telemetry_id = Some(snippet_register(ss, data4cache.completion0_text.clone(), context_used));
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -98,7 +98,7 @@ pub async fn snippet_accepted(
         debug!("snippet_accepted: ID{}: snippet is accepted", snippet_telemetry_id);
         return true;
     }
-    return false;
+    false
 }
 
 
@@ -124,7 +124,7 @@ pub async fn sources_changed(
             continue;
         }
         let orig_text = snip.inputs.sources.get(&snip.inputs.cursor.file);
-        if !orig_text.is_some() {
+        if orig_text.is_none() {
             continue;
         }
 

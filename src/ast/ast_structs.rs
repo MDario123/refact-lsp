@@ -94,6 +94,7 @@ pub struct AstError {
     pub err_line: usize,
 }
 
+#[derive(Default)]
 pub struct AstErrorStats {
     pub errors: Vec<AstError>,
     pub errors_counter: usize,
@@ -117,14 +118,6 @@ impl AstErrorStats {
     }
 }
 
-impl Default for AstErrorStats {
-    fn default() -> Self {
-        AstErrorStats {
-            errors: Vec::new(),
-            errors_counter: 0,
-        }
-    }
-}
 
 
 impl fmt::Debug for AstDefinition {
@@ -172,7 +165,7 @@ impl fmt::Debug for AstUsage {
             f,
             "U{{ {} {} }}",
             self.debug_hint,
-            if self.resolved_as.len() > 0 { self.resolved_as.clone() } else { format!("guess {}", self.targets_for_guesswork.join(" ")) }
+            if !self.resolved_as.is_empty() { self.resolved_as.clone() } else { format!("guess {}", self.targets_for_guesswork.join(" ")) }
         )
     }
 }

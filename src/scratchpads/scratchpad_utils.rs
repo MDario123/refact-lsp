@@ -27,7 +27,7 @@ impl HasRagResults {
     }
 
     pub fn response_streaming(&mut self) -> Result<Vec<Value>, String> {
-        if self.was_sent == true || self.in_json.is_empty() {
+        if self.was_sent || self.in_json.is_empty() {
             return Ok(vec![]);
         }
         self.was_sent = true;
@@ -89,7 +89,7 @@ pub fn image_reader_from_b64string(image_b64: &str) -> Result<ImageReader<Cursor
 
 // for detail = high. all images w detail = low cost 85 tokens (independent of image size)
 pub fn calculate_image_tokens_openai(image_string: &String, detail: &str) -> Result<i32, String> {
-    let reader = image_reader_from_b64string(&image_string).map_err(|_| "Failed to read image".to_string())?;
+    let reader = image_reader_from_b64string(image_string).map_err(|_| "Failed to read image".to_string())?;
     let (width, height) = reader.into_dimensions().map_err(|_| "Failed to get dimensions".to_string())?;
 
     match detail {

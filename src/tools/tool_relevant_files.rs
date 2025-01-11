@@ -26,7 +26,7 @@ use crate::tools::tools_description::Tool;
 async fn result_to_json(gcx: Arc<ARwLock<GlobalContext>>, result: IndexMap<String, ReduceFileOutput>) -> String {
     let mut shortified = IndexMap::new();
     for (file_name, file_output) in result {
-        let shortified_file_name = shortify_paths(gcx.clone(), &vec![file_name]).await.get(0).unwrap().clone();
+        let shortified_file_name = shortify_paths(gcx.clone(), &vec![file_name]).await.first().unwrap().clone();
         shortified.insert(shortified_file_name, file_output);
     }
     serde_json::to_string_pretty(&serde_json::json!(shortified)).unwrap()
@@ -432,7 +432,7 @@ async fn find_relevant_files(
                 update_usage_from_message(&mut usage, &assistant_msg);
                 expert_results.push(assistant_msg);
             }
-            check_for_inspected_files(&mut inspected_files, &messages);
+            check_for_inspected_files(&mut inspected_files, messages);
         }
     }
 
@@ -469,7 +469,7 @@ async fn find_relevant_files(
     check_for_inspected_files(&mut inspected_files, &result);
 
     let last_message = result.last().unwrap();
-    update_usage_from_message(&mut usage, &last_message);
+    update_usage_from_message(&mut usage, last_message);
 
     let reduced_files = parse_reduce_output(&last_message.content.content_text_only())?;
 

@@ -152,7 +152,7 @@ impl TSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &info.ast_fields.file_path, &decl.ast_fields.guid));
@@ -218,7 +218,7 @@ impl TSParser {
         }
         let mut body_mb = info.node.child_by_field_name("body");
         // type_alias_declaration
-        if let None = body_mb {
+        if body_mb.is_none() {
             body_mb = info.node.child_by_field_name("value");
         }
 
@@ -227,7 +227,7 @@ impl TSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             })
         }
         for i in 0..info.node.child_count() {
@@ -258,7 +258,7 @@ impl TSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         if let Some(name) = info.node.child_by_field_name("name") {
@@ -274,7 +274,7 @@ impl TSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: info.ast_fields.clone(),
                 node: value,
-                parent_guid: info.parent_guid.clone(),
+                parent_guid: info.parent_guid,
             });
         }
 
@@ -289,7 +289,7 @@ impl TSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         if let Some(name) = info.node.child_by_field_name("name") {
@@ -309,7 +309,7 @@ impl TSParser {
         let mut decl = StructDeclaration::default();
         decl.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
         decl.ast_fields.full_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &decl.ast_fields.file_path, &info.parent_guid));
@@ -327,7 +327,7 @@ impl TSParser {
                         field.ast_fields = AstSymbolFields::from_fields(&decl.ast_fields);
                         field.ast_fields.full_range = child.range();
                         field.ast_fields.declaration_range = child.range();
-                        field.ast_fields.parent_guid = Some(decl.ast_fields.guid.clone());
+                        field.ast_fields.parent_guid = Some(decl.ast_fields.guid);
                         field.ast_fields.guid = get_guid();
                         if let Some(name) = child.child_by_field_name("name") {
                             field.ast_fields.name = code.slice(name.byte_range()).to_string();
@@ -342,7 +342,7 @@ impl TSParser {
                         field.ast_fields = AstSymbolFields::from_fields(&decl.ast_fields);
                         field.ast_fields.full_range = child.range();
                         field.ast_fields.declaration_range = child.range();
-                        field.ast_fields.parent_guid = Some(decl.ast_fields.guid.clone());
+                        field.ast_fields.parent_guid = Some(decl.ast_fields.guid);
                         field.ast_fields.guid = get_guid();
                         field.ast_fields.name = code.slice(child.byte_range()).to_string();
                         symbols.push(Arc::new(RwLock::new(Box::new(field))));
@@ -351,7 +351,7 @@ impl TSParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: decl.ast_fields.clone(),
                             node: child,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         });
                     }
                 }
@@ -368,7 +368,7 @@ impl TSParser {
         decl.ast_fields.full_range = info.node.range();
         decl.ast_fields.declaration_range = info.node.range();
         decl.ast_fields.definition_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
 
         symbols.extend(self.find_error_usages(&info.node, code, &decl.ast_fields.file_path, &decl.ast_fields.guid));
@@ -422,7 +422,7 @@ impl TSParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: decl.ast_fields.clone(),
                             node: child,
-                            parent_guid: decl.ast_fields.guid.clone(),
+                            parent_guid: decl.ast_fields.guid,
                         });
                     }
                 }
@@ -450,7 +450,7 @@ impl TSParser {
             candidates.push_back(CandidateInfo {
                 ast_fields: decl.ast_fields.clone(),
                 node: body_node,
-                parent_guid: decl.ast_fields.guid.clone(),
+                parent_guid: decl.ast_fields.guid,
             });
         }
         symbols.push(Arc::new(RwLock::new(Box::new(decl))));
@@ -467,9 +467,9 @@ impl TSParser {
         let mut decl = FunctionCall::default();
         decl.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
         decl.ast_fields.full_range = info.node.range();
-        decl.ast_fields.parent_guid = Some(info.parent_guid.clone());
+        decl.ast_fields.parent_guid = Some(info.parent_guid);
         decl.ast_fields.guid = get_guid();
-        if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+        if let Some(caller_guid) = info.ast_fields.caller_guid {
             decl.ast_fields.guid = caller_guid;
         }
         decl.ast_fields.caller_guid = Some(get_guid());
@@ -490,7 +490,7 @@ impl TSParser {
                         candidates.push_back(CandidateInfo {
                             ast_fields: decl.ast_fields.clone(),
                             node: object,
-                            parent_guid: info.parent_guid.clone(),
+                            parent_guid: info.parent_guid,
                         });
                     }
                 }
@@ -498,7 +498,7 @@ impl TSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: decl.ast_fields.clone(),
                         node: function,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -513,7 +513,7 @@ impl TSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: decl.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -525,7 +525,7 @@ impl TSParser {
                 candidates.push_back(CandidateInfo {
                     ast_fields: info.ast_fields.clone(),
                     node: child,
-                    parent_guid: info.parent_guid.clone(),
+                    parent_guid: info.parent_guid,
                 });
             }
         }
@@ -554,7 +554,7 @@ impl TSParser {
                 usage.ast_fields.is_error = true;
                 usage.ast_fields.name = code.slice(parent.byte_range()).to_string();
                 usage.ast_fields.full_range = parent.range();
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.guid = get_guid();
                 // if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
                 //     usage.ast_fields.guid = caller_guid;
@@ -574,7 +574,7 @@ impl TSParser {
                 // if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
                 //     usage.ast_fields.guid = caller_guid;
                 // }
-                usage.ast_fields.parent_guid = Some(parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(*parent_guid);
                 usage.ast_fields.caller_guid = Some(get_guid());
                 if let Some(object) = parent.child_by_field_name("object") {
                     symbols.extend(self.find_error_usages(&object, code, path, parent_guid));
@@ -623,9 +623,9 @@ impl TSParser {
                 usage.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
                 usage.ast_fields.name = code.slice(info.node.byte_range()).to_string();
                 usage.ast_fields.full_range = info.node.range();
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -638,16 +638,16 @@ impl TSParser {
                 }
                 usage.ast_fields.full_range = info.node.range();
                 usage.ast_fields.guid = get_guid();
-                if let Some(caller_guid) = info.ast_fields.caller_guid.clone() {
+                if let Some(caller_guid) = info.ast_fields.caller_guid {
                     usage.ast_fields.guid = caller_guid;
                 }
-                usage.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                usage.ast_fields.parent_guid = Some(info.parent_guid);
                 usage.ast_fields.caller_guid = Some(get_guid());
                 if let Some(object) = info.node.child_by_field_name("object") {
                     candidates.push_back(CandidateInfo {
                         ast_fields: usage.ast_fields.clone(),
                         node: object,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
                 symbols.push(Arc::new(RwLock::new(Box::new(usage))));
@@ -657,21 +657,21 @@ impl TSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: constructor,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
                 if let Some(arguments) = info.node.child_by_field_name("arguments") {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: arguments,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
             "import_statement" => {
                 let mut def = ImportDeclaration::default();
                 def.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 def.ast_fields.full_range = info.node.range();
                 if let Some(source) = info.node.child_by_field_name("source") {
@@ -735,7 +735,7 @@ impl TSParser {
                         }
                     }
                 }
-                if imports.len() > 0 {
+                if !imports.is_empty() {
                     imports.iter().for_each(|x| { symbols.push(Arc::new(RwLock::new(Box::new(x.clone())))) });
                 } else {
                     symbols.push(Arc::new(RwLock::new(Box::new(def))));
@@ -745,7 +745,7 @@ impl TSParser {
                 let mut def = CommentDefinition::default();
                 def.ast_fields = AstSymbolFields::from_fields(&info.ast_fields);
                 def.ast_fields.full_range = info.node.range();
-                def.ast_fields.parent_guid = Some(info.parent_guid.clone());
+                def.ast_fields.parent_guid = Some(info.parent_guid);
                 def.ast_fields.guid = get_guid();
                 symbols.push(Arc::new(RwLock::new(Box::new(def))));
             }
@@ -758,7 +758,7 @@ impl TSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: ast.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     });
                 }
             }
@@ -768,7 +768,7 @@ impl TSParser {
                     candidates.push_back(CandidateInfo {
                         ast_fields: info.ast_fields.clone(),
                         node: child,
-                        parent_guid: info.parent_guid.clone(),
+                        parent_guid: info.parent_guid,
                     })
                 }
             }
@@ -785,7 +785,7 @@ impl TSParser {
 
         let mut candidates = VecDeque::from(vec![CandidateInfo {
             ast_fields,
-            node: parent.clone(),
+            node: *parent,
             parent_guid: get_guid(),
         }]);
         while let Some(candidate) = candidates.pop_front() {
@@ -793,9 +793,9 @@ impl TSParser {
             symbols.extend(symbols_l);
         }
         let guid_to_symbol_map = symbols.iter()
-            .map(|s| (s.clone().read().guid().clone(), s.clone())).collect::<HashMap<_, _>>();
+            .map(|s| (*s.clone().read().guid(), s.clone())).collect::<HashMap<_, _>>();
         for symbol in symbols.iter_mut() {
-            let guid = symbol.read().guid().clone();
+            let guid = *symbol.read().guid();
             if let Some(parent_guid) = symbol.read().parent_guid() {
                 if let Some(parent) = guid_to_symbol_map.get(parent_guid) {
                     parent.write().fields_mut().childs_guid.push(guid);
@@ -810,7 +810,7 @@ impl TSParser {
                 sym.fields_mut().childs_guid = sym.fields_mut().childs_guid.iter()
                     .sorted_by_key(|x| {
                         guid_to_symbol_map.get(*x).unwrap().read().full_range().start_byte
-                    }).map(|x| x.clone()).collect();
+                    }).copied().collect();
             }
         }
 

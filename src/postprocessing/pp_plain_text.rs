@@ -15,8 +15,8 @@ fn limit_text_content(
 ) -> String {
     let mut new_text_lines = vec![];
     for line in text.lines() {
-        let line_tokens = count_tokens(tokenizer_guard, &line);
-        if tok_used.clone() + line_tokens > tok_per_m {
+        let line_tokens = count_tokens(tokenizer_guard, line);
+        if *tok_used + line_tokens > tok_per_m {
             if new_text_lines.is_empty() {
                 new_text_lines.push("No content: tokens limit reached");
             }

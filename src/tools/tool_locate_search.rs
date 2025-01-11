@@ -182,7 +182,7 @@ async fn find_relevant_files_with_search(
     let mut results: Vec<ContextEnum> = vec![];
 
     if total_files_in_project == 0 {
-        let tool_message = format!("Inspected 0 files, project has 0 files");
+        let tool_message = "Inspected 0 files, project has 0 files".to_string();
         return Ok((results, usage, tool_message, "".to_string()))
     }
 
@@ -210,7 +210,7 @@ async fn find_relevant_files_with_search(
     crate::tools::tool_relevant_files::check_for_inspected_files(&mut inspected_files, &result);
 
     let last_message = result.last().unwrap();
-    crate::tools::tool_relevant_files::update_usage_from_message(&mut usage, &last_message);
+    crate::tools::tool_relevant_files::update_usage_from_message(&mut usage, last_message);
     assert!(last_message.role == "assistant");
 
     let assistant_output1 = serde_json::from_str::<IndexMap<String, serde_json::Value>>(last_message.content.content_text_only().as_str()).map_err(|e| {

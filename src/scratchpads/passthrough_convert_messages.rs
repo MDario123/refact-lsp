@@ -25,28 +25,28 @@ pub fn convert_messages_to_openai_format(messages: Vec<ChatMessage>, style: &Opt
                     };
                     let mut msg_cloned = msg.clone();
                     msg_cloned.content = ChatContent::SimpleText(text);
-                    results.push(msg_cloned.into_value(&style));
+                    results.push(msg_cloned.into_value(style));
                     if !images.is_empty() {
                         let msg_img = ChatMessage {
                             role: "user".to_string(),
                             content: ChatContent::Multimodal(images.into_iter().cloned().collect()),
                             ..Default::default()
                         };
-                        delay_images.push(msg_img.into_value(&style));
+                        delay_images.push(msg_img.into_value(style));
                     }
                 },
                 ChatContent::SimpleText(_) => {
-                    results.push(msg.into_value(&style));
+                    results.push(msg.into_value(style));
                 }
             }
 
         } else if msg.role == "assistant" || msg.role == "system" {
             flush_delayed_images(&mut results, &mut delay_images);
-            results.push(msg.into_value(&style));
+            results.push(msg.into_value(style));
 
         } else if msg.role == "user" {
             flush_delayed_images(&mut results, &mut delay_images);
-            results.push(msg.into_value(&style));
+            results.push(msg.into_value(style));
 
         } else if msg.role == "diff" {
             let tool_msg = ChatMessage {
@@ -56,14 +56,14 @@ pub fn convert_messages_to_openai_format(messages: Vec<ChatMessage>, style: &Opt
                 tool_call_id: msg.tool_call_id.clone(),
                 ..Default::default()
             };
-            results.push(tool_msg.into_value(&style));
+            results.push(tool_msg.into_value(style));
 
         } else if msg.role == "plain_text" || msg.role == "cd_instruction" {
             flush_delayed_images(&mut results, &mut delay_images);
             results.push(ChatMessage::new(
                 "user".to_string(),
                 msg.content.content_text_only(),
-            ).into_value(&style));
+            ).into_value(style));
 
         } else if msg.role == "context_file" {
             flush_delayed_images(&mut results, &mut delay_images);
@@ -77,7 +77,7 @@ pub fn convert_messages_to_openai_format(messages: Vec<ChatMessage>, style: &Opt
                                     context_file.line1,
                                     context_file.line2,
                                     context_file.file_content),
-                        ).into_value(&style));
+                        ).into_value(style));
                     }
                 },
                 Err(e) => { error!("error parsing context file: {}", e); }

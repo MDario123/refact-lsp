@@ -36,7 +36,7 @@ impl AtCommand for AtAstReference {
         cmd: &mut AtCommandMember,
         args: &mut Vec<AtCommandMember>,
     ) -> Result<(Vec<ContextEnum>, String), String> {
-        let mut arg_symbol = match args.get(0) {
+        let mut arg_symbol = match args.first() {
             Some(x) => x.clone(),
             None => {
                 cmd.ok = false;
@@ -61,7 +61,7 @@ impl AtCommand for AtAstReference {
 
             const USAGES_LIMIT: usize = 20;
 
-            if let Some(def) = defs.get(0) {
+            if let Some(def) = defs.first() {
                 let usages: Vec<(Arc<crate::ast::ast_structs::AstDefinition>, usize)> = crate::ast::ast_db::usages(ast_index.clone(), def.path(), 100).await;
                 let usage_count = usages.len();
 
@@ -90,7 +90,7 @@ impl AtCommand for AtAstReference {
                 messages.push("No definitions found for the symbol".to_string());
             }
 
-            Ok((all_results.into_iter().map(|x| ContextEnum::ContextFile(x)).collect::<Vec<ContextEnum>>(), messages.join("\n")))
+            Ok((all_results.into_iter().map(ContextEnum::ContextFile).collect::<Vec<ContextEnum>>(), messages.join("\n")))
         } else {
             Err("attempt to use @references with no ast turned on".to_string())
         }

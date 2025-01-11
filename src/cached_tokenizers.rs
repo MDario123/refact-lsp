@@ -39,7 +39,7 @@ async fn download_tokenizer_file(
     to: impl AsRef<Path>,
 ) -> Result<(), String> {
     tokio::fs::create_dir_all(
-        to.as_ref().parent().ok_or_else(|| "tokenizer path has no parent")?,
+        to.as_ref().parent().ok_or("tokenizer path has no parent")?,
     ).await.map_err(|e| format!("failed to create parent dir: {}", e))?;
     if to.as_ref().exists() {
         return Ok(());
@@ -137,7 +137,7 @@ pub async fn cached_tokenizer(
         return Ok(tokenizer_arc.unwrap().clone())
     }
 
-    let tokenizer_cache_dir = std::path::PathBuf::from(cache_dir).join("tokenizers");
+    let tokenizer_cache_dir = cache_dir.join("tokenizers");
     tokio::fs::create_dir_all(&tokenizer_cache_dir)
         .await
         .expect("failed to create cache dir");

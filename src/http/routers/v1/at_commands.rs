@@ -98,7 +98,7 @@ pub async fn handle_v1_command_completion(
     let at_commands = {
         ccx.lock().await.at_commands.clone()
     };
-    let at_command_names = at_commands.keys().map(|x|x.clone()).collect::<Vec<_>>();
+    let at_command_names = at_commands.keys().cloned().collect::<Vec<_>>();
 
     let mut completions: Vec<String> = vec![];
     let mut pos1 = -1; let mut pos2 = -1;
@@ -275,7 +275,7 @@ fn get_line_with_cursor(query: &String, cursor: i64) -> Result<(String, i64, i64
         }
         cursor_rel -= line_length + 1; // +1 to account for the newline character
     }
-    return Err(ScratchError::new(StatusCode::EXPECTATION_FAILED, "incorrect cursor provided".to_string()));
+    Err(ScratchError::new(StatusCode::EXPECTATION_FAILED, "incorrect cursor provided".to_string()))
 }
 
 async fn command_completion(
@@ -287,10 +287,10 @@ async fn command_completion(
     let at_commands = {
         ccx.lock().await.at_commands.clone()
     };
-    let at_command_names = at_commands.keys().map(|x|x.clone()).collect::<Vec<_>>();
+    let at_command_names = at_commands.keys().cloned().collect::<Vec<_>>();
 
     let q_cmd_with_index = args.iter().enumerate().find_map(|(index, x)| {
-        x.value.starts_with("@").then(|| (x, index))
+        x.value.starts_with("@").then_some((x, index))
     });
     let (q_cmd, q_cmd_idx) = match q_cmd_with_index {
         Some((x, idx)) => (x.clone(), idx),
@@ -307,7 +307,7 @@ async fn command_completion(
             }
         }
     };
-    args = args.iter().skip(q_cmd_idx + 1).map(|x|x.clone()).collect::<Vec<_>>();
+    args = args.iter().skip(q_cmd_idx + 1).cloned().collect::<Vec<_>>();
     let cmd_params_cnt = cmd.lock().await.params().len();
     args.truncate(cmd_params_cnt);
 
@@ -334,11 +334,8 @@ async fn command_completion(
 
     // if command is not focused, and the argument is empty we should make suggestions
     if !q_cmd.focused {
-        match cmd.lock().await.params().get(args.len()) {
-            Some(param) => {
-                return (param.lock().await.param_completion(ccx.clone(), &"".to_string()).await, false, cursor_abs, cursor_abs);
-            },
-            None => {}
+        if let Some(param) = cmd.lock().await.params().get(args.len()) {
+            return (param.lock().await.param_completion(ccx.clone(), &"".to_string()).await, false, cursor_abs, cursor_abs);
         }
     }
 
@@ -352,12 +349,12 @@ async fn command_completion_options(
     let at_commands = {
         ccx.lock().await.at_commands.clone()
     };
-    let at_command_names = at_commands.keys().map(|x|x.clone()).collect::<Vec<_>>();
+    let at_command_names = at_commands.keys().cloned().collect::<Vec<_>>();
     at_command_names
         .iter()
         .filter(|command| command.starts_with(q_cmd))
         .map(|command| {
-            (command, jaro_winkler(&command, q_cmd))
+            (command, jaro_winkler(command, q_cmd))
         })
         .sorted_by(|(_, dist1), (_, dist2)| dist1.partial_cmp(dist2).unwrap())
         .rev()
